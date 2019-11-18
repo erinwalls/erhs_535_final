@@ -59,4 +59,22 @@ for (year in 1947:2008) {
   result.current$year <- year
   result <- rbind(result, result.current)
 }
-write.table(result, filename, row.names=F) # save complete table to file
+#write.table(result, filename, row.names=F) # save complete table to file
+
+
+
+
+#~Rough draft of subsetting data; need to somehow replace literal strings w/ e.g. a list of names from the dataset
+
+jeopardy_s1 %>%
+  filter(str_detect(string = answer, pattern = c("Peru")) | str_detect(string = question, pattern = c("Peru")))
+
+
+jeopardy_s1 %>%
+  filter(str_detect(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|") ) | str_detect(string = question, pattern = paste(countrySynonyms$name1, collapse = "|") ))
+
+
+#  sapply(test.data$item, function(x) any(sapply(fruit, str_detect, string = x)))
+
+jeopardy_s1 %>%
+  sapply(X = .$question, function(x) any(sapply(countrySynonyms$name1, str_detect, string = x)))
