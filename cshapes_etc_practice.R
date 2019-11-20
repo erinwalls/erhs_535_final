@@ -66,15 +66,27 @@ for (year in 1947:2008) {
 
 #~Rough draft of subsetting data; need to somehow replace literal strings w/ e.g. a list of names from the dataset
 
-jeopardy_s1 %>%
-  filter(str_detect(string = answer, pattern = c("Peru")) | str_detect(string = question, pattern = c("Peru")))
-
 
 jeopardy_s1 %>%
   filter(str_detect(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|") ) | str_detect(string = question, pattern = paste(countrySynonyms$name1, collapse = "|") ))
 
-
-#  sapply(test.data$item, function(x) any(sapply(fruit, str_detect, string = x)))
-
 jeopardy_s1 %>%
-  sapply(X = .$question, function(x) any(sapply(countrySynonyms$name1, str_detect, string = x)))
+  str_count(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|"))
+
+
+
+country_name_vector <- vector()
+country_mention_count <- numeric()
+country_mention_dataframe = as.data.frame(cbind(country_name_vector, country_mention_count))
+
+for(i in 1:nrow(countrySynonyms)){
+  country_mention_count = 0
+  for(j in 1:nrow(jeopardy_s1)){
+    country_name_vector <- c(country_name_vector, countrySynonyms[i,1])
+    if(strdetect(jeopardy_s1$answer, countrySynonyms[,i]) | str_detect(jeopardy_s1$question, countrySynonyms[,i])){
+      country_mention_count = country_mention_count + 1
+    }
+    country_mention_dataframe = cat(country_mention_dataframe, cbind())
+  }
+}
+
