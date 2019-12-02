@@ -68,10 +68,18 @@ for (year in 1947:2008) {
 
 
 jeopardy_s1 %>%
-  filter(str_detect(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|") ) | str_detect(string = question, pattern = paste(countrySynonyms$name1, collapse = "|") ))
-
+  filter(str_detect(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|") ) | str_detect(string = question, pattern = paste(countrySynonyms$name1, collapse = "|") )) %>%
+  mutate(country = str_extract(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|") )) %>%
+  mutate(country2 = str_extract(string = question, pattern = paste(countrySynonyms$name1, collapse = "|") )) %>% 
+  mutate(country3 = str_extract(string = answer, pattern = paste(countrySynonyms$name8, collapse = "|") )) %>%
+  mutate(country4 = str_extract(string = question, pattern = paste(countrySynonyms$name8, collapse = "|") ))
+  
+  
 jeopardy_s1 %>%
   str_count(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|"))
+
+jeopardy_s1 %>%
+  filter(str_detect(string = answer, pattern = paste(countrySynonyms$name1, collapse = "|") ) | str_detect(string = question, pattern = paste(countrySynonyms$name1, collapse = "|") )) %>%
 
 
 
@@ -90,3 +98,6 @@ for(i in 1:nrow(countrySynonyms)){
   }
 }
 
+
+
+jeopardy_s1_countries 
