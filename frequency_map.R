@@ -13,4 +13,4 @@ iso3_tally %>%
   mutate(iso3 = toupper(iso3)) %>%
   rename(ISO3V10 = iso3) %>%
   joinCountryData2Map(joinCode = "ISO3", nameCountryColumn = "ISOV10") %>%
-  mapCountryData(nameColumnToPlot = "count")
+  mapCountryData(nameColumnToPlot = "count", catMethod = 'pretty')
