@@ -14,3 +14,33 @@ iso3_tally %>%
   rename(ISO3V10 = iso3) %>%
   joinCountryData2Map(joinCode = "ISO3", nameCountryColumn = "ISOV10") %>%
   mapCountryData(nameColumnToPlot = "count", catMethod = 'pretty')
+
+
+
+################ Example tigris map; 
+#importing map from `rworldmap` b/c it has ISO3 codes, 
+#but might be able to use another source if we translate e.g. ISO3 to FIPS
+
+library(rworldmap)
+library(tigris)
+library(sf)
+
+options(tigris_class = "sf") #not sure if this step is necessary; leftover from ~template tutorial
+
+countriesLow_sf <- countriesLow %>% st_as_sf #from rworldmap; I don't think I had to load it separately
+  #Ideally could use another source if we want to control zooming, projection, etc, 
+#but haven't looked into that option so far
+
+frequency_map_test <- iso3_tally %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countriesLow_sf) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  st_as_sf
+
+ggplot() +
+  geom_sf(data = frequency_map_test, aes(fill = count)) +
+  scale_fill_viridis_c()
+
+####
