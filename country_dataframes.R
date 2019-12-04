@@ -77,7 +77,8 @@ country_questions_iso <- country_questions %>%
   rename(country = country_q)%>%
   mutate(type = rep("question", nrow(.)))
 
-country_all_iso <- full_join(country_ansmwers_iso, country_questions_iso)
+country_all_iso <- full_join(country_ansmwers_iso, country_questions_iso) %>%
+  filter(!(category == "AMERICAN INDIANS" & iso3 == "ind")) #getting rid of at least some false positives
 
 
 iso3_tally <- country_all_iso %>%
