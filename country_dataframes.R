@@ -77,4 +77,12 @@ country_questions_iso <- country_questions %>%
   rename(country = country_q)%>%
   mutate(type = rep("question", nrow(.)))
 
-full_join(country_ansmwers_iso, country_questions_iso)
+country_all_iso <- full_join(country_ansmwers_iso, country_questions_iso)
+
+
+iso3_tally <- country_all_iso %>%
+  group_by(iso3) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+
