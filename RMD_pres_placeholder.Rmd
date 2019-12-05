@@ -1,0 +1,33 @@
+---
+title: "ERHS 535 Final: Jeopardy Geography"
+author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
+date: "12/5/2019"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+We decided to answer this question because (...)
+
+## Figure 1:
+
+(Frequency Map)
+
+
+
+## Slide with R Output
+
+```{r cars, echo = TRUE}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+
