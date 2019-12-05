@@ -11,6 +11,7 @@ library(tidyverse)
 library(rvest)
 library(magrittr)
 library(janitor)
+library(lubridate)
 data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
@@ -88,5 +89,29 @@ iso3_tally_all <- country_all_iso_all %>%
   group_by(iso3) %>%
   summarize(count = n()) %>%
   arrange(desc(count))
+
+
+
+iso3_tally_all <- country_all_iso_all %>%
+  mutate(year = year(air_date)) %>% 
+  group_by(iso3, year) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
+
+
+
+jeopadry_country_merge_all <- country_all_iso_all %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count))
+
+write.csv(iso3_tally_all, "iso3_tally_all.csv")
+
+
 
 

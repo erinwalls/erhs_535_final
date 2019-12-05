@@ -89,12 +89,24 @@ iso3_tally <- country_all_iso %>%
 
 #merging with rworldmap
 
-jeopadry_countries_low_res <- country_all_iso %>%
+jeopadry_country_merge_s1 <- country_all_iso %>%
   group_by(iso3) %>%
   add_tally(name = "count") %>%
   ungroup() %>%
   mutate(iso3 = toupper(iso3),
          iso3 = as.factor(iso3)) %>%
   rename(ISO3V10 = iso3) %>%
-  full_join(countryExData)
+  full_join(countryExData) %>%
+  filter(!is.na(count))
 
+
+
+jeopadry_country_merge_all <- country_all_iso_all %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count))
