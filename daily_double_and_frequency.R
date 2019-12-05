@@ -23,6 +23,7 @@ library(tidyverse)
 library(rvest)
 library(magrittr)
 library(janitor)
+library(tidyr)
 
 data("countryExData")
 data("countryRegions")
@@ -42,7 +43,7 @@ table <- table %>%
   clean_names()
 
 # converting country synonyms to full list - one obs for each adjectival/demonym
-denonym_table <- table %>% 
+demonym_table <- table %>% 
   as.tibble() %>% 
   mutate(country_entity_name = str_replace(country_entity_name, "\\[.\\]", ""),
          adjectivals = str_replace(adjectivals, "\\[.\\]", ""),
@@ -56,8 +57,39 @@ countrySynonyms_full <- countrySynonyms %>%
 
 country_names_full <- countrySynonyms_full %>% 
   select(-c(name, ID)) %>% 
-  left_join(denonym_table, by = c("country" = "country_entity_name")) %>% 
+  left_join(demonym_table, by = c("country" = "country_entity_name")) %>% 
   pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>% 
   drop_na()
 
+# filter answers & questions that have countries mentioned
+country_answers <-  daily_double %>%
+  filter(str_detect(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  mutate(country_a = str_extract_all(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),
+                                                                       "[^a-z]"))) %>%
+  unnest(country_a)
+
+country_questions <-  daily_double %>%
+  filter(str_detect(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  mutate(country_q = str_extract_all(string = question, pattern = paste0(paste(country_names_full$names, collapse = "|"),
+                                                                         "[^a-z]"))) %>%
+  unnest(country_q)
+
+# joining iso codes to help reduce false positives
+country_answers_iso <- country_answers %>%
+  left_join(country_names_full, by = c("country_a" = "names")) %>%
+  rename(country = country_a) %>%
+  mutate(type = rep("answer", nrow(.)))
+
+country_questions_iso <- country_questions %>%
+  left_join(country_names_full, by = c("country_q" = "names")) %>%
+  rename(country = country_q)%>%
+  mutate(type = rep("question", nrow(.)))
+
+country_all_iso <- full_join(country_answers_iso, country_questions_iso) %>%
+  filter(!(category == "AMERICAN INDIANS" & ISO3 == "ind")) #getting rid of at least some false positives
+
+iso3_tally <- country_all_iso %>%
+  group_by(ISO3) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count))
   
