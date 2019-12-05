@@ -3,6 +3,10 @@ library(leaflet)
 library(tidyverse)
 source("country_dataframes.R") #To get country_all_isoobject; can comment this pout if already loaded
 
+
+test_geom <- countriesLow %>% st_as_sf
+
+
 test_geom_full <- country_all_iso %>%
   group_by(iso3) %>%
   add_tally(name = "count") %>%
