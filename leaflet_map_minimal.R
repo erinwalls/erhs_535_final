@@ -2,29 +2,29 @@
 library(leaflet)
 library(tidyverse)
 source("country_dataframes.R") #To get country_all_isoobject; can comment this pout if already loaded
+library(rworldmap)
+
+countries_low_res <- countriesLow %>% st_as_sf #from `rworldpackage`; I think they have higher-res versions as well ,and we could probably use different sources
 
 
-test_geom <- countriesLow %>% st_as_sf
-
-
-test_geom_full <- country_all_iso %>%
+jeopadry_countries_low_res <- country_all_iso %>%
   group_by(iso3) %>%
   add_tally(name = "count") %>%
   ungroup() %>%
   mutate(iso3 = toupper(iso3),
          iso3 = as.factor(iso3)) %>%
   rename(ISO3 = iso3) %>%
-  full_join(test_geom) %>%
+  full_join(countries_low_res) %>%
   mutate(ISO3 = as.factor(ISO3)) %>%
   clean_names() %>%
   st_as_sf
 
 
-pal <- colorNumeric(
+count_pal <- colorNumeric(
   palette = 'Dark2',
-  domain = test_geom_full$count
+  domain = jeopadry_countries_low_res$count
 )
 
-leaflet(test_geom_full) %>%
+leaflet(jeopadry_countries_low_res) %>%
   addTiles() %>%
-  addPolygons(color = ~pal(count))
+  addPolygons(color = ~count_pal(count))

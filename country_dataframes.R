@@ -87,4 +87,14 @@ iso3_tally <- country_all_iso %>%
   arrange(desc(count))
 
 
+#merging with rworldmap
+
+jeopadry_countries_low_res <- country_all_iso %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData)
 
