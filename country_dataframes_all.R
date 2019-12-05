@@ -3,6 +3,9 @@
 #comment out once s1 is loaded
 #source("s1_download.R")
 
+jeopardy_all <- read_tsv("master_season1-35.tsv/master_season1-35.tsv") #downloaded manually; couldn't figure out how to read w/ file being zipped
+
+
 library(rworldmap)
 library(tidyverse)
 library(rvest)
@@ -53,38 +56,37 @@ country_names_full <- countrySynonyms_full %>%
 
 
 
-country_ansmwers <-  jeopardy_s1 %>%
+country_ansmwers_all <-  jeopardy_all %>%
   filter(str_detect(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
   mutate(country_a = str_extract_all(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),
                                                                        "[^a-z]"))) %>%
   unnest(country_a)
 
 
-country_questions <-  jeopardy_s1 %>%
+country_questions_all <-  jeopardy_all %>%
   filter(str_detect(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
   mutate(country_q = str_extract_all(string = question, pattern = paste0(paste(country_names_full$names, collapse = "|"),
                                                                        "[^a-z]"))) %>%
   unnest(country_q)
 
 
-country_ansmwers_iso <- country_ansmwers %>%
+country_ansmwers_iso_all <- country_ansmwers_all %>%
   left_join(country_names_full, by = c("country_a" = "names")) %>%
   rename(country = country_a) %>%
   mutate(type = rep("answer", nrow(.)))
 
-country_questions_iso <- country_questions %>%
+country_questions_iso_all <- country_questions_all %>%
   left_join(country_names_full, by = c("country_q" = "names")) %>%
   rename(country = country_q)%>%
   mutate(type = rep("question", nrow(.)))
 
-country_all_iso <- full_join(country_ansmwers_iso, country_questions_iso) %>%
+country_all_iso_all <- full_join(country_ansmwers_iso_all, country_questions_iso_all) %>%
   filter(!(category == "AMERICAN INDIANS" & iso3 == "ind")) #getting rid of at least some false positives
 
 
-iso3_tally <- country_all_iso %>%
+iso3_tally_all <- country_all_iso_all %>%
   group_by(iso3) %>%
   summarize(count = n()) %>%
   arrange(desc(count))
-
 
 
