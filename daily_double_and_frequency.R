@@ -91,5 +91,16 @@ country_all_iso <- full_join(country_answers_iso, country_questions_iso) %>%
 iso3_tally <- country_all_iso %>%
   group_by(ISO3) %>%
   summarize(count = n()) %>%
-  arrange(desc(count))
+  arrange(desc(count)) %>% 
+  mutate_all(toupper)
+
+# join to world map for display
+map <- joinCountryData2Map(iso3_tally,
+                           joinCode = "ISO3",
+                           nameJoinColumn = "ISO3") %>% 
+  mapCountryData(nameColumnToPlot = "count")
+
+
+# all seasons
+
   
