@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 * We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
 
-* To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using <package/function>.
+* To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
 
 * These additional names were also converted to a single column, and matched to ISO3 codes.
 
