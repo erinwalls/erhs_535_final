@@ -3,8 +3,10 @@ library(leaflet)
 library(tidyverse)
 source("country_dataframes.R") #To get country_all_isoobject; can comment this pout if already loaded
 library(rworldmap)
+library(sf)
 
 countries_low_res <- countriesLow %>% st_as_sf #from `rworldpackage`; I think they have higher-res versions as well ,and we could probably use different sources
+
 
 
 jeopadry_countries_low_res <- country_all_iso %>%
