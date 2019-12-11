@@ -9,25 +9,51 @@ output: slidy_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Introduction
+#Quick summary of data preparation process:
 
-We decided to answer this question because (...)
+* Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
+* Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
+* The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
 
-## Figure 1:
+* For our next, step, we needed a list of names associated with countries
 
-(Frequency Map)
+* Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
+
+* We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
+
+* To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+
+* These additional names were also converted to a single column, and matched to ISO3 codes.
+
+* We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
+  
+  * We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
+  
+  * The question categoires also provided some context for addressing false negatives--for instance, an "American Indians" category accounted for many matches to "India".
+  
+* Naturally, there are some limitations with context; for instance, "Georgia" could still refer to the first name, and "China" could refer to ceramics. Without manually checking matches, this kind of double-meaning can't be avoidued. 
+
+* We were able to limit some 
+
+* Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
+
+* We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
 
 
+# Mapping:
 
-## Slide with R Output
+* The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
 
-```{r cars, echo = TRUE}
-summary(cars)
-```
+* From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
 
-## Slide with Plot
+# Statistical ~Exploration:
 
-```{r pressure}
-plot(pressure)
-```
+...
 
+# Findings
+
+* France was the most-mentioned country by a margin of <#>, with the US perhaps more predictably following at <#> total references.
+
+* At least subjectively, the "Jeopardy World Map" seemed to become more representative over time, with a larger number of countires mentioned over time. 
+
+* <>

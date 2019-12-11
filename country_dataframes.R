@@ -8,6 +8,8 @@ library(tidyverse)
 library(rvest)
 library(magrittr)
 library(janitor)
+library(sf)
+
 data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
@@ -49,7 +51,8 @@ country_names_full <- countrySynonyms_full %>%
   left_join(demonym_table, by = c("country" = "country_entity_name")) %>%
   pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>%
   drop_na()%>%
-  clean_names()
+  clean_names() %>%
+  distinct()
 
 
 
@@ -86,5 +89,38 @@ iso3_tally <- country_all_iso %>%
   summarize(count = n()) %>%
   arrange(desc(count))
 
+
+#merging with rworldmap
+
+jeopadry_country_merge_s1 <- country_all_iso %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count))
+
+
+
+
+
+countries_low_res <- countriesLow %>% st_as_sf #from `rworldpackage`; I think they have higher-res versions as well ,and we could probably use different sources
+
+
+
+jeopadry_countries_low_res <- country_all_iso %>%
+  drop_na() %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countries_low_res) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
 
 
