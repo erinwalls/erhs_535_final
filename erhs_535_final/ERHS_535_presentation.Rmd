@@ -1,0 +1,88 @@
+---
+title: "R Programming Presentation"
+author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
+date: "12/5/2019"
+output: powerpoint_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Research Questions
+What is the most frequently mentioned country in Jeopardy? ...
+## Introduction
+
+## Methods
+Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
+* Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
+* The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
+
+* For our next, step, we needed a list of names associated with countries
+
+* Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
+
+* We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
+
+* To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+
+* These additional names were also converted to a single column, and matched to ISO3 codes.
+
+* We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
+  
+  * We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
+  
+  * The question categoires also provided some context for addressing false negatives--for instance, an "American Indians" category accounted for many matches to "India".
+  
+* Naturally, there are some limitations with context; for instance, "Georgia" could still refer to the first name, and "China" could refer to ceramics. Without manually checking matches, this kind of double-meaning can't be avoidued. 
+
+* We were able to limit some 
+
+* Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
+
+* We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
+
+
+# Mapping:
+
+* The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
+
+* From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
+
+## Results
+
+## Conclusion
+
+## Tutorial
+
+## Lessons Learned
+
+
+
+
+
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Output
+
+```{r cars, echo = TRUE}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+
