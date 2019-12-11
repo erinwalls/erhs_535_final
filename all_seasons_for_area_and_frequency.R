@@ -58,7 +58,7 @@ view(all_season_simple)
 ##### After viewing the data, I realize that there are some duplicated data row. In order to avoid them, I used unique() to extract rows
 
 all_season_unique <-all_season_simple %>%
-  unique() %>%
+  distinct() %>%
   filter (!is.na(landarea)) %>%
   filter (!is.na(GDP_capita.MRYA)) 
 
@@ -73,17 +73,10 @@ view(all_season_unique)
 
 ######## Before we seperate the analysis by season, we try to see whether season influence the Ratio (count/landarea)
 mod_2 <- lm(Ratio ~ season, data = all_season_unique)
-
 Anova(mod_2, type = 3)
+#######Unfortunally, the ratio was not significantly influence by seanson, but it is still worth to try
 
-
-
-library(broom)
-tidy(mod_2)
-
-glance(mod_2)
-
-map_count_season_landarea <- jeopardy_all_season_simple%>%
+map_count_season_landarea <- all_season_unique%>%
   ggplot() + 
   geom_point(aes(x = season, y = count, color = landarea),size=0.5) + 
   geom_text_repel(aes(x = season, y = count, color=landarea, label=country),
