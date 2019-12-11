@@ -14,40 +14,87 @@ What is the most frequently mentioned country in Jeopardy? ...
 ## Introduction
 
 ## Methods
-Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
-* Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
-* The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
+- Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
 
-* For our next, step, we needed a list of names associated with countries
+- Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
 
-* Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
+- The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
 
-* We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
+## Next Steps . . .
+- We needed a list of names associated with countries
 
-* To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+- Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
 
-* These additional names were also converted to a single column, and matched to ISO3 codes.
+- We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
 
-* We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
+- To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+
+- These additional names were also converted to a single column, and matched to ISO3 codes.
+## Matching Names
+- We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
   
-  * We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
+- We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
   
-  * The question categoires also provided some context for addressing false negatives--for instance, an "American Indians" category accounted for many matches to "India".
-  
-* Naturally, there are some limitations with context; for instance, "Georgia" could still refer to the first name, and "China" could refer to ceramics. Without manually checking matches, this kind of double-meaning can't be avoidued. 
-
-* We were able to limit some 
+## Finally . . .
 
 * Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
 
 * We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
 
 
-# Mapping:
+## Mapping:
 
-* The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
+- The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
 
-* From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
+- From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
+
+## Leaflet
+- We used leaflet package to map out out the countries mentioned, how many times they were mentiones and the airdates when they were mentioned. 
+
+```{r pressure}
+library("ggplot2")
+library("readr")
+library(leaflet)
+library(tidyverse)
+source("country_dataframes.R")
+#To get country_all_isoobject; can comment this pout if already loaded
+
+test_geom <- countriesLow %>% st_as_sf
+
+test_geom_full <- country_all_iso %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(test_geom) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+library("viridisLite")
+pal <- colorNumeric(
+  palette =  "Greens",
+  domain = test_geom_full$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                      test_geom_full$name, "<br/>",
+                    "<b>Population:</b> ",
+                      test_geom_full$pop_est, "<br/>",
+                    "<b>Count:</b> ",
+                      test_geom_full$count, "<br/>",
+                    "<b>Air Date:</b> ",
+                      test_geom_full$air_date)
+                    
+                    
+
+leaflet(test_geom_full) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
+
+```
+
 
 ## Results
 
@@ -83,6 +130,44 @@ summary(cars)
 ## Slide with Plot
 
 ```{r pressure}
-plot(pressure)
+library("ggplot2")
+library(leaflet)
+library(tidyverse)
+source("country_dataframes.R") #To get country_all_isoobject; can comment this pout if already loaded
+
+test_geom <- countriesLow %>% st_as_sf
+
+test_geom_full <- country_all_iso %>%
+  group_by(iso3) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(test_geom) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+library("viridisLite")
+pal <- colorNumeric(
+  palette =  "Greens",
+  domain = test_geom_full$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                      test_geom_full$name, "<br/>",
+                    "<b>Population:</b> ",
+                      test_geom_full$pop_est, "<br/>",
+                    "<b>Count:</b> ",
+                      test_geom_full$count, "<br/>",
+                    "<b>Air Date:</b> ",
+                      test_geom_full$air_date)
+                    
+                    
+
+leaflet(test_geom_full) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
+
 ```
 

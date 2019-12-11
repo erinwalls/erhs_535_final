@@ -7,6 +7,7 @@ test_geom <- countriesLow %>% st_as_sf
 
 test_geom_full <- country_all_iso %>%
   group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
   add_tally(name = "count") %>%
   ungroup() %>%
   mutate(iso3 = toupper(iso3),
@@ -22,14 +23,17 @@ pal <- colorNumeric(
   palette =  "Greens",
   domain = test_geom_full$count)
 
+
 popup_info<- paste0("<b>Country:</b> ",
                       test_geom_full$name, "<br/>",
                     "<b>Population:</b> ",
                       test_geom_full$pop_est, "<br/>",
-                    "<b>Rank:</b> ",
-                      test_geom_full$scale_rank, "<br/>",
+                    "<b>Count:</b> ",
+                      test_geom_full$count, "<br/>",
                     "<b>Air Date:</b> ",
-                      test_geom_full$air_date)
+                      test_geom_full$air_date, "<br/>",
+                    "<b>Mean Value:</b> ",
+                      test_geom_full$mean_value)
                     
                     
 
