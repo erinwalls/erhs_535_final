@@ -11,28 +11,86 @@ library(flexdashboard)
 library(plotly)
 library(leaflet)
 library(DT)
-library(dplyr)
+library(tidyverse)
 library(lubridate)
 library(ggthemes)
+library(janitor)
+library(rworldmap)
+library(sf)
 ```
 
 
 ```{r}
-ufo_sightings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-25/ufo_sightings.csv")
-ufo_sightings_us <- ufo_sightings %>%
-  dplyr::filter(country == 'us') %>%
-  dplyr::mutate(date_time = mdy_hm(date_time), 
-                date_documented = mdy(date_documented),
-                sighting_year = year(date_time))
 
 
-ufo_sightings_co <- ufo_sightings_us %>%
-  filter(state == "co")
-  
-ufo_map <- leaflet(ufo_sightings_co) %>%
-  addTiles() %>%  # Add default OpenStreetMap map tiles
-  addCircleMarkers()
-ufo_map # Print the 
+#write.csv(iso3_tally_all, "iso3_tally_all.csv") # simplest; just iso3 codes and counts
+#write.csv(country_merge_all, "country_merge_all.csv") # just name vector
+#write.csv(country_all_iso_all, "country_all_iso_all.csv") #'atomic' version; jeopardy data w/ iso3 codes and counts
+#write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv") # iso3 codes with all external data
+
+
+countries_low_res <- countriesLow %>% st_as_sf #from `rworldpackage`; I think they have higher-res versions as well ,and we could probably use different sources
+
+jeopadry_country_merge_all <- read.csv("jeopadry_country_merge_all.csv") %>%
+  mutate(year = year(air_date)) %>%
+  drop_na()
+
+
+###
+
+
+iso3_tally_all <- jeopadry_country_merge_all %>%
+  select(iso3, count) %>%
+  distinct()
+
+iso3_values <- jeopadry_country_merge_all %>%
+  select(iso3, value) %>%
+  group_by(iso3) %>%
+  summarize(value = mean(value)) %>%
+  ungroup()
+
+
+
+jeopadry_countries_tally_low_res <- iso3_tally_all %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countries_low_res) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+
+
+jeopadry_countries_value_low_res <- iso3_values %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countries_low_res) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+
+
+iso3_tally_all_years <- read_csv("iso3_tally_all_years.csv")
+
+
+jeopadry_countries_tally_years_low_res <- iso3_tally_all_years %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countries_low_res) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+
+
+
 
 
 
@@ -47,10 +105,15 @@ Column {data-width=650}
 ```{r}
 
 
-m_2 <- leaflet(ufo_sightings_co) %>%
-  addTiles() %>%  # Add default OpenStreetMap map tiles
-  addCircleMarkers()
-m_2
+
+count_pal <- colorNumeric(
+  palette = 'viridis',
+  domain = jeopadry_countries_tally_low_res$count
+)
+
+leaflet(jeopadry_countries_tally_low_res) %>%
+  addTiles() %>%
+  addPolygons(color = ~count_pal(count), popup = ~as.character(count))
 
 
 ```
@@ -61,21 +124,25 @@ Column {data-width=350}
 ### Chart B
 
 ```{r}
-ufo_sightings_co %>%
-  group_by(sighting_year) %>%
-  summarize(`Sighting Count` = n()) %>%
-  ggplot() +
-  aes(x = sighting_year, y = `Sighting Count`) +
-  geom_line() +
-  theme_clean()
-
+iso3_tally_all_years %>%
+  DT::datatable()
 
 ```
 
 ### Chart C
 
 ```{r}
-datatable(ufo_sightings_co, options = list(pageLength = 5))
+
+count_pal <- colorNumeric(
+  palette = 'magma',
+  domain = jeopadry_countries_value_low_res$value
+)
+
+leaflet(jeopadry_countries_value_low_res) %>%
+  addTiles() %>%
+  addPolygons(color = ~count_pal(value), popup = ~as.character(value))
+
+
 
 ```
 

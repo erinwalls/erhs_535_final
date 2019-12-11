@@ -3,7 +3,7 @@
 #comment out once s1 is loaded
 #source("s1_download.R")
 
-jeopardy_all <- read_tsv("master_season1-35.tsv/master_season1-35.tsv") #downloaded manually; couldn't figure out how to read w/ file being zipped
+insta
 
 
 library(rworldmap)
@@ -15,6 +15,8 @@ library(lubridate)
 data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
+
+jeopardy_all <- read_tsv("master_season1-35.tsv/master_season1-35.tsv") #downloaded manually; couldn't figure out how to read w/ file being zipped
 
 #Loading demonyms
 
@@ -46,44 +48,44 @@ demonym_table <- table %>%
 
 countrySynonyms_full <- countrySynonyms %>%
   pivot_longer(name1:name8, names_to = "name", values_to = "country") %>%
-  filter(!is.na(country) & country != "") 
+  filter(!is.na(country) & country != "") %>%
+  drop_na()
 
 country_names_full <- countrySynonyms_full %>%
   select(-c(name, ID)) %>%
   left_join(demonym_table, by = c("country" = "country_entity_name")) %>%
   pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>%
-  drop_na()%>%
-  clean_names()
-
-
-
-country_ansmwers_all <-  jeopardy_all %>%
-  filter(str_detect(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
-  mutate(country_a = str_extract_all(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),
-                                                                       "[^a-z]"))) %>%
-  unnest(country_a)
-
+  select(-name_type) %>% 
+  distinct() %>%
+  clean_names() %>%
+  drop_na() %>%
+  filter(iso3 != "")
 
 country_questions_all <-  jeopardy_all %>%
-  filter(str_detect(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  #filter(year(air_date) %in% 2004:2010) %>%
   mutate(country_q = str_extract_all(string = question, pattern = paste0(paste(country_names_full$names, collapse = "|"),
-                                                                       "[^a-z]"))) %>%
+                                                                         "[^a-z]"))) %>%
+  filter(!is.na(country_q)) %>%
   unnest(country_q)
 
+country_answers_all <-  jeopardy_all %>%
+  #filter(year(air_date) %in% 2004:2010) %>%
+  mutate(country_a = str_extract_all(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),
+                                                                         "[^a-z]"))) %>%
+  filter(!is.na(country_a)) %>%
+  unnest(country_a)
 
-country_ansmwers_iso_all <- country_ansmwers_all %>%
-  left_join(country_names_full, by = c("country_a" = "names")) %>%
-  rename(country = country_a) %>%
-  mutate(type = rep("answer", nrow(.)))
+country_merge_all <- full_join(country_answers_all, country_questions_all) %>%
+  pivot_longer(c(country_a, country_q), names_to = "type", values_to = "country") %>%
+  drop_na()
 
-country_questions_iso_all <- country_questions_all %>%
-  left_join(country_names_full, by = c("country_q" = "names")) %>%
-  rename(country = country_q)%>%
-  mutate(type = rep("question", nrow(.)))
 
-country_all_iso_all <- full_join(country_ansmwers_iso_all, country_questions_iso_all) %>%
-  filter(!(category == "AMERICAN INDIANS" & iso3 == "ind")) #getting rid of at least some false positives
+#country_merge_all_4_10 <- country_merge_all
 
+country_all_iso_all <- country_merge_all %>%
+  left_join(country_names_full, by = c("country" = "names")) %>%
+  filter(!(category %in% c("AMERICAN INDIANS", "AMERICAN INDIAN TRIBES") & iso3 == "ind"),
+         !(iso3 %in% c("iot","atf"))) #getting rid of at least some false positives
 
 iso3_tally_all <- country_all_iso_all %>%
   group_by(iso3) %>%
@@ -91,8 +93,7 @@ iso3_tally_all <- country_all_iso_all %>%
   arrange(desc(count))
 
 
-
-iso3_tally_all <- country_all_iso_all %>%
+iso3_tally_all_years <- country_all_iso_all %>%
   mutate(year = year(air_date)) %>% 
   group_by(iso3, year) %>%
   summarize(count = n()) %>%
@@ -110,8 +111,12 @@ jeopadry_country_merge_all <- country_all_iso_all %>%
   full_join(countryExData) %>%
   filter(!is.na(count))
 
-write.csv(iso3_tally_all, "iso3_tally_all.csv")
 
+write.csv(iso3_tally_all, "iso3_tally_all.csv") # simplest; just iso3 codes and counts
+write.csv(iso3_tally_all_years, "iso3_tally_all_years.csv")
+write.csv(country_merge_all, "country_merge_all.csv") # just name vector
+write.csv(country_all_iso_all, "country_all_iso_all.csv") #'atomic' version; jeopardy data w/ iso3 codes and counts
+write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv") # iso3 codes with all external data
 
 
 

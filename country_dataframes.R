@@ -51,7 +51,8 @@ country_names_full <- countrySynonyms_full %>%
   left_join(demonym_table, by = c("country" = "country_entity_name")) %>%
   pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>%
   drop_na()%>%
-  clean_names()
+  clean_names() %>%
+  distinct()
 
 
 
