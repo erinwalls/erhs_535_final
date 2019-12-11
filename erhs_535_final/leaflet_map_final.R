@@ -41,3 +41,45 @@ leaflet(test_geom_full) %>%
   addTiles() %>%
   addPolygons(color = ~pal(count), popup = popup_info)
 
+-------------
+  # All Seasons
+test <- read_csv("country_all_iso_all.csv") %>%
+  select(-X1)
+
+  test_geom <- countriesLow %>% st_as_sf
+
+test_geom_full <- test %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(test_geom) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+library("viridisLite")
+pal <- colorNumeric(
+  palette =  "Greens",
+  domain = test_geom_full$count)
+
+
+popup_info<- paste0("<b>Country:</b> ",
+                    test_geom_full$name, "<br/>",
+                    "<b>Population:</b> ",
+                    test_geom_full$pop_est, "<br/>",
+                    "<b>Count:</b> ",
+                    test_geom_full$count, "<br/>",
+                    "<b>Air Date:</b> ",
+                    test_geom_full$air_date, "<br/>",
+                    "<b>Mean Value:</b> ",
+                    test_geom_full$mean_value)
+
+
+
+leaflet(test_geom_full) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
