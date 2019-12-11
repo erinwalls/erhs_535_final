@@ -8,6 +8,10 @@ library(rworldmap)
 library(rvest)
 library(tidyr)
 library(janitor)
+library(ggplot2)
+library(rgeos)
+library(data.table)
+library(lubridate)
 
 # upload Jeopardy data
 # library(readr)
@@ -152,15 +156,15 @@ country_names_full <- countrySynonyms_full %>%
 country_answers_all <-  daily_double_all %>%
   filter(str_detect(string = answer, pattern = paste0(paste(
     country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
-  mutate(country_a = str_extract_all(string = answer, pattern = paste0(paste(
-    country_names_full$names, collapse = "|"),"[^a-z]"))) %>%
+  mutate(country_a = str_extract_all(string = answer, pattern = paste0(
+    paste(country_names_full$names, collapse = "|"),"[^a-z]"))) %>% 
   unnest(country_a)
 
 country_questions_all <-  daily_double_all %>%
   filter(str_detect(string = answer, pattern = paste0(paste(
     country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
-  mutate(country_q = str_extract_all(string = question, pattern = paste0(paste(
-    country_names_full$names, collapse = "|"),"[^a-z]"))) %>%
+  mutate(country_q = str_extract_all(string = question, pattern = paste0(
+    paste(country_names_full$names, collapse = "|"),"[^a-z]"))) %>%
   unnest(country_q)
 
 # joining iso codes
@@ -176,7 +180,8 @@ country_questions_iso_all <- country_questions_all %>%
 
 country_all_iso_allszn <- full_join(country_answers_iso_all, 
                                     country_questions_iso_all) %>%
-  filter(!(category == "AMERICAN INDIANS" & ISO3 == "ind"))
+  filter(!(category == "AMERICAN INDIANS" & ISO3 == "ind")) %>% 
+  mutate_all(toupper)
 
 iso3_tally_all <- country_all_iso_allszn %>%
   group_by(ISO3) %>%
@@ -189,4 +194,26 @@ map <- joinCountryData2Map(iso3_tally_all,
                            joinCode = "ISO3",
                            nameJoinColumn = "ISO3") %>% 
   mapCountryData(nameColumnToPlot = "count")
-  
+
+# playing with gif creation
+wmap <- getMap(resolution = "low")
+wmap <- spTransform(wmap, CRS("+proj=robin"))
+# get centroids
+centroids <- gCentroid(wmap, byid = TRUE, id = wmap@data$ISO3)
+centroids <- data.frame(centroids)
+setDT(centroids, keep.rownames = TRUE)[]
+setnames(centroids, "rn", "country_iso3c")
+
+# join data to map
+wmap_df <- fortify(wmap, region = "ISO3")
+wmap_df <- left_join(wmap_df, country_all_iso_allszn, by = c('id' = 'ISO3')) # data
+wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c')) # centroids
+# creates huge dataset, going back to mutate data
+
+all_country_iso <- country_all_iso_allszn %>% 
+  mutate(date = ymd(air_date)) %>% 
+  mutate(year = year(date)) %>% 
+  select(c(round, value, daily_double, answer, question, country, ISO3,
+           name_type, type, date, year)) %>% 
+  group_by(year, ISO3) %>% 
+  summarize(season_count = n())
