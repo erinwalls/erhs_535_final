@@ -71,10 +71,10 @@ write.csv(all_season_unique, file = "all_season_unique.csv")
 ###### Then I view it, and it looks okay
 view(all_season_unique)
 
-######## Before we seperate the analysis by season, we try to see whether season influence the Ratio (count/landarea)
-mod_2 <- lm(Ratio ~ season, data = all_season_unique)
+######## Before we seperate the analysis by season, we try to see whether season or GDP (as we discussed) influence the Ratio (count/landarea)
+mod_2 <- lm(Ratio ~ season + GDP_capita.MRYA, data = all_season_unique)
 Anova(mod_2, type = 3)
-#######Unfortunally, the ratio was not significantly influence by seanson, but it is still worth to try
+####### Unfortunally, the ratio was not significantly influence by seanson, but it is still worth to try. Also, the Ratio is influenced by GDP
 
 map_count_season_landarea <- all_season_unique%>%
   ggplot() + 
