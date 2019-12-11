@@ -22,13 +22,9 @@ data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
 
-
 country_all_iso_all <- read.csv("country_all_iso_all.csv") #downloaded manually; couldn't figure out how to read w/ file being zipped
 
-
-head(country_all_iso_all ) 
-
-
+#### Modify data for world maping
 jeopardy_all_season  <-  country_all_iso_all%>%
   group_by(iso3) %>%
   add_tally(name = "count") %>%
@@ -39,12 +35,13 @@ jeopardy_all_season  <-  country_all_iso_all%>%
   full_join(countryExData) %>%
   filter(!is.na(count)) %>%
   mutate(Ratio = count / landarea)
-
+##### R world mapping
 all_season_worldmap <- jeopardy_all_season %>%
   joinCountryData2Map(joinCode = "ISO3", nameCountryColumn = "ISO3V10") %>%
   mapCountryData(nameColumnToPlot = "Ratio") 
 
 
+##### In following section, I modified the data in order to do statistic analysis
 all_season_simple <- jeopardy_all_season  %>%
   mutate(Ratio = count / landarea) %>%
   mutate(air_date = ymd(air_date))%>%
@@ -58,22 +55,25 @@ all_season_simple <- jeopardy_all_season  %>%
 
 view(all_season_simple) 
 
+##### After viewing the data, I realize that there are some duplicated data row. In order to avoid them, I used unique() to extract rows
+
 all_season_unique <-all_season_simple %>%
   unique() %>%
   filter (!is.na(landarea)) %>%
   filter (!is.na(GDP_capita.MRYA)) 
 
-head(all_season_unique) 
-
 str(all_season_unique)
+
+#####Then I write a CSV in case something will be wrong
 
 write.csv(all_season_unique, file = "all_season_unique.csv")
 
+###### Then I view it, and it looks okay
 view(all_season_unique)
 
-
-
+######## Before we seperate the analysis by season, we try to see whether season influence the Ratio (count/landarea)
 mod_2 <- lm(Ratio ~ season, data = all_season_unique)
+
 Anova(mod_2, type = 3)
 
 
