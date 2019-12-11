@@ -10,6 +10,10 @@ library(rvest)
 library(magrittr)
 library(janitor)
 library(lubridate)
+library(lme4)
+library(lmerTest)
+library(car)
+library(emmeans)
 data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
@@ -31,20 +35,28 @@ jeopardy_all_season  <-  country_all_iso_all%>%
   full_join(countryExData) %>%
   filter(!is.na(count))
 
+
 jeopardy_all_season    %>%
   mutate(Ratio = count / landarea) %>%
   joinCountryData2Map(joinCode = "ISO3", nameCountryColumn = "ISO3V10") %>%
-  mapCountryData(nameColumnToPlot = "Ratio")
+  mapCountryData(nameColumnToPlot = "Ratio") 
+
 
 library(dlnm)
 
+
 jeopardy_all_season <- jeopardy_all_season  %>%
-  mutate(Ratio = count / landarea)
+  mutate(Ratio = count / landarea) %>%
+  mutate(air_date = ymd(air_date))%>%
+  separate(air_date, sep="-", into = c("year", "month", "day")) %>%
+  mutate(season = year) %>%
+  mutate(season = as_factor(x = season))
 
-str(jeopardy_all_season) 
+str(jeopardy_all_season)
 
-mod_2 <- lm(count ~ landarea, data = jeopardy_all_season  )
-mod_2
+mod_2 <- lmer(count ~ landarea*season +(1|GDP_capita.MRYA), data = jeopardy_all_season)
+Anova(mod_2, type= 3)
+
 
 library(broom)
 tidy(mod_2)
