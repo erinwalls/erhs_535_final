@@ -1,0 +1,188 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(leaflet)
+library(DT)
+library(tidyverse)
+library(lubridate)
+library(ggthemes)
+library(janitor)
+library(rworldmap)
+library(sf)
+```
+
+
+```{r}
+
+
+#write.csv(iso3_tally_all, "iso3_tally_all.csv") # simplest; just iso3 codes and counts
+#write.csv(country_merge_all, "country_merge_all.csv") # just name vector
+#write.csv(country_all_iso_all, "country_all_iso_all.csv") #'atomic' version; jeopardy data w/ iso3 codes and counts
+#write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv") # iso3 codes with all external data
+
+
+country_all_iso_all <- read.csv("country_all_iso_all.csv") 
+
+
+jeopadry_country_merge_all <- read.csv("jeopadry_country_merge_all.csv") %>%
+  mutate(year = year(air_date)) %>%
+  drop_na()
+
+countries_low_res <- countriesLow %>% st_as_sf #from `rworldpackage`; I think they have higher-res versions as well ,and we could probably use different sources
+data("countrySynonyms")
+
+###
+
+
+
+
+iso3_tally_all <- jeopadry_country_merge_all %>%
+  select(iso3, count) %>%
+  distinct()
+
+
+iso3_tally_all_years <- country_all_iso_all %>%
+  mutate(year = year(air_date)) %>%
+  group_by(iso3, year) %>%
+    summarize(count = n())
+
+iso3_values <- jeopadry_country_merge_all %>%
+  select(iso3, value) %>%
+  group_by(iso3) %>%
+  summarize(value = mean(value)) %>%
+  ungroup()
+
+
+iso3_count_tally_value_doubles <- country_all_iso_all%>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" = "yes", "FALSE" ="no"),
+         daily_double = as.logical(daily_double),
+         year = year(air_date),
+         month = month(air_date)) %>%
+  group_by(iso3) %>%
+  summarize(mean_value = mean(value), count = n(), daily_doubles = sum(daily_double )) %>%
+  left_join(countrySynonyms[,2:3], by = c("iso3" = "ISO3")) %>%
+  rename('primary_name' = name1) %>%
+  select(iso3, primary_name, count, mean_value, daily_doubles)
+
+
+
+jeopadry_countries_data_low_res <- iso3_count_tally_value_doubles %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countries_low_res) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+
+jeopadry_countries_tally_years_low_res <- iso3_tally_all_years %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3 = iso3) %>%
+  full_join(countries_low_res) %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  clean_names() %>%
+  st_as_sf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+
+
+count_pal <- colorNumeric(
+  palette = 'viridis',
+  domain = jeopadry_countries_data_low_res$count
+)
+
+#leaflet(jeopadry_countries_data_low_res) %>%
+#  addTiles() %>%
+#  addPolygons(color = ~count_pal(count),
+#              popup = paste(primary_name, ":", count))
+
+
+
+leaflet(jeopadry_countries_data_low_res) %>%
+  addTiles() %>%
+  addPolygons(color = ~count_pal(count),
+              popup = ~paste(primary_name, ":", count))
+
+
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+
+country_all_iso_all%>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" = "yes", "FALSE" ="no"),
+         daily_double = as.logical(daily_double),
+         year = year(air_date),
+         month = month(air_date)) %>%
+  group_by(iso3) %>%
+  summarize(mean_value = mean(value), count = n(), daily_doubles = sum(daily_double )) %>%
+  left_join(countrySynonyms[,2:3], by = c("iso3" = "ISO3")) %>%
+  rename('primary_name' = name1) %>%
+  select(primary_name, count, mean_value, daily_doubles) %>%
+  DT::datatable()
+  
+
+```
+
+### Chart C
+
+```{r}
+
+value_pal <- colorNumeric(
+  palette = 'magma',
+  domain = jeopadry_countries_data_low_res$mean_value
+)
+
+doubles_pal <- colorNumeric(
+  palette = 'viridis',
+  domain = jeopadry_countries_data_low_res$daily_doubles
+)
+
+leaflet(jeopadry_countries_data_low_res) %>%
+  addTiles() %>%
+  addPolygons(color = ~value_pal(mean_value),
+              popup = ~paste(primary_name, ":", mean_value))
+
+
+
+```
+
