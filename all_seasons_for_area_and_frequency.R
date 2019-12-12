@@ -28,7 +28,8 @@ View(country_all_iso_all)
 str(country_all_iso_all)
 #### Modify data for world maping  
 jeopardy_all_season  <-  country_all_iso_all%>%
-  group_by(iso3) %>%
+  mutate(year = year(air_date))%>%
+  group_by(iso3, year) %>%
   add_tally(name = "count") %>%
   ungroup() %>%
   mutate(iso3 = toupper(iso3),
