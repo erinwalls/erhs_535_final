@@ -1,0 +1,221 @@
+---
+title: "R Programming Presentation"
+author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
+date: "12/5/2019"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Research Questions
+What is the most frequently mentioned country in Jeopardy? 
+
+
+
+Is there a correlation between land area and mentions in Jeopardy?
+
+
+
+What is the frequency of mentions in DailyDouble for each country?
+```{r}
+
+```
+
+## Introduction
+
+### Methods
+- Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
+
+- Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
+
+- The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
+
+## Next Steps . . .
+- We needed a list of names associated with countries
+
+- Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
+
+- We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
+
+## Next Steps Continued . . .
+- To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+
+- These additional names were also converted to a single column, and matched to ISO3 codes.
+
+## Matching Names
+- We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
+  
+- We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
+  
+## Finally . . .
+
+* Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
+
+* We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
+
+
+## Mapping:
+
+- The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
+```{r, }
+
+```
+
+- From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
+
+## What is the most frequently mentioned country in Jeopardy? 
+
+- We used leaflet package to map out out the countries mentioned, how many times they were mentiones and the population of each country. 
+
+```{r Leaflet Map, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rworldmap)
+library(sf)
+library(leaflet)
+library("dplyr")
+library(viridisLite)
+library(janitor)
+
+  country_data_all <-read_csv("country_all_iso_all.csv", )
+
+countriesLow <- countriesLow %>%
+  st_as_sf
+
+#Temporarily removing air date (not sure how to animate/facet/etc. in Leaflet)
+
+country_geom_full<- country_data_all %>%
+  left_join(countryExData, by = c("iso3" = "ISO3V10")) %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  select(country, count, mean_value, iso3) %>%
+  distinct() %>%
+  mutate(iso3 = toupper(iso3)) %>%
+  rename(ISO3 = iso3)
+
+country_geom_map_data <- country_geom_full %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  dplyr::full_join(countriesLow) %>%
+  clean_names() %>%
+  st_as_sf
+
+pal <- colorNumeric(
+  palette = "Greens",
+  domain = country_geom_map_data$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                    country_geom_map_data$name, "<br/>",
+                    "<b>Population:</b>",
+                    country_geom_map_data$pop_est, "<br/>",
+                    "<b>Count:</b>",
+                    country_geom_map_data$count, "<br/>",
+                    "<b>Mean Value:</b> ",
+                    round(country_geom_map_data$mean_value))
+
+
+
+
+leaflet(country_geom_map_data) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
+
+
+```
+
+## Is there a correlation between land area and mentions in Jeopardy?
+- 
+```{r}
+
+```
+## What is the frequency of mentions in DailyDouble for each country?
+- 
+
+## Results
+- France is the most mentioned country coming in at 1,070 mentions throughout all the seasons. 
+
+- 
+
+- 
+
+## Conclusion
+
+## Tutorial
+### Data Manipulation
+```{r}
+
+```
+
+### Leaflet Package
+```{r echo= TRUE, tidy=TRUE, message=FALSE, warning= FALSE}
+library(tidyverse)
+library(rworldmap)
+library(sf)
+library(leaflet)
+library("dplyr")
+library(viridisLite)
+library(janitor)
+
+  country_data_all <-read_csv("country_all_iso_all.csv", )
+
+countriesLow <- countriesLow %>%
+  st_as_sf
+
+#Temporarily removing air date (not sure how to animate/facet/etc. in Leaflet)
+
+country_geom_full<- country_data_all %>%
+  left_join(countryExData, by = c("iso3" = "ISO3V10")) %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  select(country, count, mean_value, iso3) %>%
+  distinct() %>%
+  mutate(iso3 = toupper(iso3)) %>%
+  rename(ISO3 = iso3)
+
+country_geom_map_data <- country_geom_full %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  dplyr::full_join(countriesLow) %>%
+  clean_names() %>%
+  st_as_sf
+
+pal <- colorNumeric(
+  palette = "Greens",
+  domain = country_geom_map_data$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                    country_geom_map_data$name, "<br/>",
+                    "<b>Population:</b>",
+                    country_geom_map_data$pop_est, "<br/>",
+                    "<b>Count:</b>",
+                    country_geom_map_data$count, "<br/>",
+                    "<b>Mean Value:</b> ",
+                    round(country_geom_map_data$mean_value))
+
+
+
+
+leaflet(country_geom_map_data) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
+
+
+```
+### Plotly
+```{r}
+
+```
+
+## Lessons Learned
+- Data Version Control
+
+
+
+
+
+
+
+
