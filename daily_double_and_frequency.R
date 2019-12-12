@@ -12,6 +12,8 @@ library(ggplot2)
 library(rgeos)
 library(data.table)
 library(lubridate)
+library(ggthemes)
+library(plotly)
 
 # upload Jeopardy data
 # library(readr)
@@ -216,4 +218,34 @@ all_country_iso <- country_all_iso_allszn %>%
   select(c(round, value, daily_double, answer, question, country, ISO3,
            name_type, type, date, year)) %>% 
   group_by(year, ISO3) %>% 
-  summarize(season_count = n())
+  summarize(season_count = n()) %>% 
+  left_join(countryExData, by = c('ISO3' = 'ISO3V10')) %>% 
+  select(year:Country) %>% 
+  drop_na()
+
+# join new data set to map
+wmap_df <- fortify(wmap, region = "ISO3")
+wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'ISO3'))
+wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c'))
+
+# gif creation
+ggplot(data = wmap_df) +
+  geom_polygon(aes(x = long, y = lat, group = group,fill = season_count)) +
+  theme_void() +
+  theme(legend.position = "bottom") +
+  transition_states(year)
+
+# forget GIF, going for plotly
+p <- ggplot(data = wmap_df) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = season_count,
+                   text = paste0(Country))) +
+  theme_void() +
+  theme(legend.position = "bottom") 
+
+ggplotly(p, tooltip = "text")
+
+  
+  
+
+
+  
