@@ -24,7 +24,8 @@ data("countryRegions")
 data("countrySynonyms")
 
 country_all_iso_all <- read.csv("country_all_iso_all.csv") #downloaded manually; couldn't figure out how to read w/ file being zipped
-
+View(country_all_iso_all)
+str(country_all_iso_all)
 #### Modify data for world maping
 jeopardy_all_season  <-  country_all_iso_all%>%
   group_by(iso3) %>%
@@ -37,7 +38,7 @@ jeopardy_all_season  <-  country_all_iso_all%>%
   filter(!is.na(count)) %>%
   mutate(Ratio = count / landarea)
 
-View(jeopardy_all_season)
+str(jeopardy_all_season)
 ##### R world mapping
 all_season_worldmap <- jeopardy_all_season %>%
   joinCountryData2Map(joinCode = "ISO3", nameCountryColumn = "ISO3V10") %>%
