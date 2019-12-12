@@ -26,7 +26,7 @@ data("countrySynonyms")
 country_all_iso_all <- read.csv("country_all_iso_all.csv") #downloaded manually; couldn't figure out how to read w/ file being zipped
 View(country_all_iso_all)
 str(country_all_iso_all)
-#### Modify data for world maping
+#### Modify data for world maping  
 jeopardy_all_season  <-  country_all_iso_all%>%
   group_by(iso3) %>%
   add_tally(name = "count") %>%
