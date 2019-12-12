@@ -72,7 +72,7 @@ all_season_unique <-all_season_simple %>%
 
 write.csv(all_season_unique, file = "all_season_unique.csv")
 
-###### Then I view it, and it looks okay, but I realized that the count are same for same country, which means ......... we cann't run season here
+###### Then I view it, and it looks okay, but I realized that the count are same for same country, which means ......... we cann't run season here, so I narrowed data down to one season
 view(all_season_unique)
 str(all_season_unique)
 all_season_onecountry <- all_season_unique %>%
