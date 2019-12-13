@@ -1,0 +1,414 @@
+---
+title: "R Programming Presentation"
+author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
+date: "12/5/2019"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Research Questions:
+Which countries are most frequently-mentioned in Jeopardy, and how does that relate to the frequency of daily doubles? 
+
+Is there a correlation between land area and mentions in Jeopardy?
+
+Is there a correlation between land area or GDP and mentions in Jeopardy?
+
+
+## Introduction
+
+<<<<<<< HEAD
+
+What is the frequency of mentions in DailyDouble for each country?
+```{r}
+=======
+- Geography, a ripe field for questions in its own right, could also be indicative of values and expectations over time. 
+- We were also excited to get more experience exploring mapping in R, and this seemed like a good opportunity.
+>>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
+
+
+## Methods
+
+## Data Processing
+
+- We started with Github user `jwolle`'s extensive Jeopardy archives, which span from September 1984 to July of this year. These were easy to read in using `tidyverse` tools
+
+- To generate a list of country names, we drew on a set up country synonyms from the `rworldmap` package, as well as an HTML table of country names, adjectives, and demonyms from Wikipedia using the `rvest` web scraping package. 
+
+- We used regex matching with package `stringr` to extract instances of names in our country list from Jeopardy questions and answers.
+
+##
+
+- United Nations ISO3 codes were the backbone of our dataset, allowing us to associate terms (e.g. we linked "China","Chinese","PRC",  and "People's Republic of China", to the ISO3 code "CHN")
+
+- Naturally, there were some complications; most notably, "Indian" frequently referred to Native Americans. We were able to partially mitigate this with Category context (e.g. "Colonial America", "Native Americans"). 
+
+- Another interesting wrinkle was words like "French" and "Dutch", which are both adjectives and demonyms, being double-counted, briefly making France appear to be the most popular country in Jeopardy history. 
+
+## Mapping
+
+- We matched our ISO3-linked jeopardy data to geographic data (vector polygons defining borders, among other information) from the `rworldmap` package using the `join` family of functions from `dplyr`
+
+- Once summarized (to optimize memory usage) and converted into an `sf`, or *simple feature* format, we were able to pass these objects to theinteractive mapping package `leaflet`, among other downstream applications.
+
+
+## Statistics
+
+<<<<<<< HEAD
+- The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
+
+```{r, }
+
+
+```
+=======
+- We used relatively basic analyses in this project
+
+- For the question of which countries were most frequently mentioned, we simply grouped by iso3 codes, and counted the number of instances of each, either over all time, or within a given year.
+
+- To explore the question of how reference frequency is realted to land area and GDP, we fit linear models to test the correlation of land area to mentions.
+>>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
+
+
+
+ 
+## Results
+
+### Frequency:
+
+- Unsurprisingly, America is the most-commonly mentioned country, at 16,395 references over the years, well ahead of runner-up France with 6,847, and the UK at 3,844.
+
+- The US, India, and Mexico were the only non-European countries that made the all-time top 10 (also those with >2,000 references), although Japan and Canada were relatively close behind in the 1,800s.  
+
+- While additional false positives undoubtedly made it through, India was genuinely popular in geography and history questions, as well as the subject of some tailor-made categories ("India", "A Passage to India", "Punjab", etc.)
+
+
+```{r Leaflet Map, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rworldmap)
+library(sf)
+library(leaflet)
+library("dplyr")
+library(viridisLite)
+library(janitor)
+library(lubridate)
+library(broom)
+library(plotly)
+
+country_data_all <-read_csv("country_all_iso_all.csv", )
+
+countriesLow <- countriesLow %>%
+  st_as_sf
+
+#Temporarily removing air date (not sure how to animate/facet/etc. in Leaflet)
+
+country_geom_full<- country_data_all %>%
+  left_join(countryExData, by = c("iso3" = "ISO3V10")) %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  select(country, count, mean_value, iso3) %>%
+  distinct() %>%
+  mutate(iso3 = toupper(iso3)) %>%
+  rename(ISO3 = iso3)
+
+country_geom_map_data <- country_geom_full %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  dplyr::full_join(countriesLow) %>%
+  clean_names() %>%
+  st_as_sf
+
+pal <- colorQuantile(
+  palette = "Greens",
+  domain = country_geom_map_data$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                    country_geom_map_data$name, "<br/>",
+                    "<b>Population:</b>",
+                    country_geom_map_data$pop_est, "<br/>",
+                    "<b>Count:</b>",
+                    country_geom_map_data$count, "<br/>",
+                    "<b>Mean Value:</b> ",
+                    round(country_geom_map_data$mean_value))
+
+
+
+
+leaflet(country_geom_map_data) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info) %>%
+  addLegend(pal = pal, values = ~count, position = 'topright')
+
+
+```
+<<<<<<< HEAD
+
+## Is there a correlation between land area and mentions in Jeopardy?
+- 
+```{r}
+=======
+>>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
+
+## Land Area and Frequency:
+
+- We'd speculated that the popularity of relatively small European countries and (to a lesser extent) Carribean Islands could lead to a relatively weak, or even negative, correlation between country size and popularity in questions/answers, but found a fairly consistent, positive correlation.
+
+<<<<<<< HEAD
+
+- 
+
+- The country with biger landarea or higher GDP has higher chance to be mentioned in Jeopardy.
+
+
+- 
+=======
+- Russia, being both relatively popular and a massive 16,679,993 km^2, almost single-handedly sets this trend (see animation), although the next-largest countries in Canada (9458907 km^2), the USA (9210753 km^2) and China (9198094 km^2) are relatively popular as well. 
+
+```{r}
+
+
+jeopardy_all_season  <-  country_data_all%>%
+  mutate(year = year(air_date)) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count)) %>%
+  rename(iso3 = "ISO3V10") %>%
+  clean_names() %>%
+  mutate(ratio = count / landarea)
+
+
+
+ggplotly(jeopardy_all_season %>%
+  select(iso3, landarea, year, epi_regions, count) %>%
+  #filter(iso3 != 'USA') %>%
+  distinct() %>%
+  group_by(year, epi_regions) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+  drop_na() %>%
+  nest() %>%
+  mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
+                              tidy() %>% select(term, estimate))) %>%
+  unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+  pivot_wider(names_from = term, values_from = estimate) %>%
+  clean_names %>%
+  rename(slope = landarea) %>%
+  unnest(data) %>%
+  ggplot() +
+  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions, label = iso3)) +
+  geom_abline(aes(slope = slope, intercept = intercept, frame = year, color = epi_regions))
+)
+
+```
+
+## GDP and Frequency:
+
+- GDP also showed a positive correlation with frequency of mentions; in this case the USA played an outsize role
+>>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
+
+```{r}
+
+
+ggplotly(jeopardy_all_season %>%
+           select(iso3, gdp_capita_mrya, year, epi_regions, count) %>%
+           #filter(iso3 != 'USA') %>%
+           distinct() %>%
+           group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+           drop_na() %>%
+           nest() %>%
+           mutate(model = purrr::map(data, ~lm(count ~ gdp_capita_mrya, data = .x) %>% 
+                                       tidy() %>% select(term, estimate))) %>%
+           unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+           pivot_wider(names_from = term, values_from = estimate) %>%
+           clean_names %>%
+           rename(slope = gdp_capita_mrya) %>%
+           unnest(data) %>%
+           ggplot() +
+           geom_point(aes(x = gdp_capita_mrya, y = count, frame = year, color = epi_regions, label = iso3)) +
+           geom_abline(aes(slope = slope, intercept = intercept, frame = year))
+)
+
+```
+
+
+## Daily Doubles
+
+### *Placeholder: for some reason my R session keeps ~freezing (the last merge step uses a lot of memory eve after I stop) when I try running `daily_double_and_frequency`*
+
+```{r}
+frequency_map_test <- country_all_iso_all %>%
+  select(value, daily_double, air_date, country, iso3) %>%
+  distinct() %>%
+  mutate(year = ymd(air_date)) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "season_count") %>%
+  ungroup() %>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" ="yes", "FALSE" = "no"),
+         daily_double = as.logical(daily_double)) %>%
+  group_by(iso3) %>%
+  summarize(count = n(), mean_value = mean(value), daily_double_count = sum(daily_double)) %>%
+  full_join(countriesLow_sf, by = c("iso3" = "ISO3")) %>%
+  st_as_sf
+
+
+
+
+
+
+ggplotly(ggplot() +
+  
+  
+  
+  geom_sf(data = frequency_map_test, aes(fill = daily_double_count, color = mean_value)) +
+  
+  
+  
+  scale_fill_viridis_c() +
+    scale_color_viridis_c(option = 'plasma')
+)
+
+```
+
+
+
+## Conclusion
+
+## Tutorial
+### Data Manipulation
+
+```{r}
+
+```
+
+### Leaflet Package
+```{r echo= TRUE, tidy=TRUE, message=FALSE, warning= FALSE}
+library(tidyverse)
+library(rworldmap)
+library(sf)
+library(leaflet)
+library("dplyr")
+library(viridisLite)
+library(janitor)
+
+  country_data_all <-read_csv("country_all_iso_all.csv", )
+
+countriesLow <- countriesLow %>%
+  st_as_sf
+
+#Temporarily removing air date (not sure how to animate/facet/etc. in Leaflet)
+
+country_geom_full<- country_data_all %>%
+  left_join(countryExData, by = c("iso3" = "ISO3V10")) %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  select(country, count, mean_value, iso3) %>%
+  distinct() %>%
+  mutate(iso3 = toupper(iso3)) %>%
+  rename(ISO3 = iso3)
+
+country_geom_map_data <- country_geom_full %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  dplyr::full_join(countriesLow) %>%
+  clean_names() %>%
+  st_as_sf
+
+pal <- colorNumeric(
+  palette = "Greens",
+  domain = country_geom_map_data$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                    country_geom_map_data$name, "<br/>",
+                    "<b>Population:</b>",
+                    country_geom_map_data$pop_est, "<br/>",
+                    "<b>Count:</b>",
+                    country_geom_map_data$count, "<br/>",
+                    "<b>Mean Value:</b> ",
+                    round(country_geom_map_data$mean_value))
+
+
+
+
+leaflet(country_geom_map_data) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
+
+
+```
+### Plotly
+```{r}
+
+```
+
+### Lessons Learned
+- Data Version Control
+
+
+
+
+
+## Code Overview and More-Detailed Methods
+
+- Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
+
+- Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
+
+- The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
+
+## Next Steps . . .
+- We needed a list of names associated with countries
+
+- Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
+
+- We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
+
+## Next Steps Continued . . .
+- To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+
+- These additional names were also converted to a single column, and matched to ISO3 codes.
+
+## Matching Names
+- We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
+  
+- We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
+  
+## Finally . . .
+
+* Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
+
+* We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
+
+
+## Mapping:
+
+- The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes.
+
+
+
+```{r}
+  
+```
+
+
+
+- From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
+
+## What is the most frequently mentioned country in Jeopardy? 
+
+- We used leaflet package to map out out the countries mentioned, how many times they were mentiones and the population of each country. 
+
+
+## Is there a correlation between land area and mentions in Jeopardy?
+- 
+```{r}
+
+```
+## What is the frequency of mentions in DailyDouble for each country?
+- 
