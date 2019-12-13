@@ -13,8 +13,10 @@ knitr::opts_chunk$set(echo = FALSE)
 What is the most frequently mentioned country in Jeopardy? 
 
 
-
 Is there a correlation between land area and mentions in Jeopardy?
+
+Is there a correlation between land area or GDP and mentions in Jeopardy?
+
 
 
 
@@ -59,7 +61,9 @@ What is the frequency of mentions in DailyDouble for each country?
 ## Mapping:
 
 - The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
+
 ```{r, }
+
 
 ```
 
@@ -136,7 +140,11 @@ leaflet(country_geom_map_data) %>%
 ## Results
 - France is the most mentioned country coming in at 1,070 mentions throughout all the seasons. 
 
+
 - 
+
+- The country with biger landarea or higher GDP has higher chance to be mentioned in Jeopardy.
+
 
 - 
 
@@ -144,6 +152,7 @@ leaflet(country_geom_map_data) %>%
 
 ## Tutorial
 ### Data Manipulation
+
 ```{r}
 
 ```
@@ -209,8 +218,10 @@ leaflet(country_geom_map_data) %>%
 
 ```
 
-## Lessons Learned
+### Lessons Learned
 - Data Version Control
+
+
 
 
 
