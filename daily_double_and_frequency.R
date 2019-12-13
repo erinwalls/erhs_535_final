@@ -14,6 +14,7 @@ library(data.table)
 library(lubridate)
 library(ggthemes)
 library(plotly)
+library(viridis)
 
 # upload season 1 Jeopardy data
 jeopardy_s1 <- read_tsv(
@@ -152,10 +153,15 @@ ggplot(data = wmap_df) +
 p <- ggplot(data = wmap_df) +
   geom_polygon(aes(x = long, y = lat, group = group, fill = season_count,
                    text = hover)) +
-  labs(title = "Number of Country Mentions\nDaily Doubles Season 1 through 35",
-       fill = "Number of Mentions") +
-  theme_map()
+  labs(fill = "Number of mentions") +
+  theme_map() +
+  scale_fill_viridis_c()
 
-plotly <- ggplotly(p, tooltip = "text")
+plotly <- ggplotly(p, tooltip = "text") %>% 
+  layout(title = list(text = paste0('Number of country mentions',
+                                    '<br>',
+                                    '<sup>',
+                                    'Daily Doubles, seasons 1-35',
+                                    '</sup>')))
 
 plotly
