@@ -36,7 +36,7 @@ Column {data-width=650}
 ```{r freq map}
 
 
-#country_data_all <- read_csv("country_all_iso_all.csv", )
+country_data_all <- read_csv("country_all_iso_all.csv", )
 
 #using data `countriesLow` from `rworldmap` 
 
@@ -96,8 +96,15 @@ leaflet(countriesLow_jeopardy) %>%
 
 
 
+```
 
-jeopardy_all_season  <-  country_data_all %>%
+
+Daily Doubles {date-widt = 200}
+-----------------------------------------------------------------------
+
+```{r}
+
+jeopardy_all_season  <-  country_data_all%>%
   mutate(year = year(air_date)) %>%
   group_by(iso3, year) %>%
   add_tally(name = "count") %>%
@@ -111,37 +118,10 @@ jeopardy_all_season  <-  country_data_all %>%
   clean_names() %>%
   mutate(ratio = count / landarea)
 
-#jeopardy_all_season    %>%
-#  mutate(Ratio = count / landarea) %>%
-#  joinCountryData2Map(joinCode = "ISO3", nameJoinColumn = "iso3", nameCountryColumn = "iso3") %>%
-#  mapCountryData(nameColumnToPlot = "Ratio") 
-
-
-#view(jeopardy_all_season) 
-
-
-ggplotly(jeopardy_all_season %>%
-  select(iso3, landarea, year, epi_regions, count) %>%
-  #filter(iso3 != 'USA') %>%
-  distinct() %>%
-  group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
-  drop_na() %>%
-  nest() %>%
-  mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
-                              tidy() %>% select(term, estimate))) %>%
-  unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
-  pivot_wider(names_from = term, values_from = estimate) %>%
-  clean_names %>%
-  rename(slope = landarea) %>%
-  unnest(data) %>%
-  ggplot() +
-  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions)) +
-  geom_abline(aes(slope = slope, intercept = intercept, frame = year))
-)
 ```
 
 
-Column {data-width=650}
+Column {data-width=350}
 -----------------------------------------------------------------------
 
 ### Summary Datatable
