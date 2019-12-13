@@ -16,7 +16,6 @@ library(ggthemes)
 library(plotly)
 library(viridis)
 
-
 data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
@@ -52,12 +51,10 @@ demonym_table <- table %>%
   separate_rows(adjectivals, sep = ",\\s|/|\\sor\\s") %>% 
   separate_rows(demonyms, sep = ",\\s|/|\\sor\\s")
 
-
 countrySynonyms_full <- countrySynonyms %>% 
   pivot_longer(name1:name8, names_to = "name", values_to = "country") %>% 
   filter(!is.na(country) & country != "") %>% 
-  drop_na() %>% 
-  mutate_all(toupper)
+  drop_na()
 
 country_names_full <- countrySynonyms_full %>% 
   select(-c(name, ID)) %>% 
@@ -112,6 +109,9 @@ centroids <- data.frame(centroids)
 setDT(centroids, keep.rownames = TRUE)[]
 setnames(centroids, "rn", "country_iso3c")
 
+countrySynonyms_full <- countrySynonyms_full %>% 
+  mutate_all(toupper)
+
 all_country_iso <- country_all_iso_allszn %>% 
   mutate(date = ymd(air_date)) %>% 
   mutate(year = year(date)) %>% 
@@ -121,9 +121,10 @@ all_country_iso <- country_all_iso_allszn %>%
   summarize(season_count = n()) %>% 
   left_join(countrySynonyms_full, by = c('iso3' = 'ISO3')) %>%  
   filter(name == "NAME1") %>% 
-  mutate(country = str_to_title(country)) %>% 
-  mutate(hover = with(all_country_iso, paste(country, '<br>',
-                                                    "Total:", season_count)))
+  mutate(country = str_to_title(country))
+
+all_country_iso$hover = with(all_country_iso, paste(country, '<br>',
+                                                    "Total:", season_count))
 
 
 # join new data set to map
