@@ -2,7 +2,9 @@
 title: "ERHS 535 Project Report"
 author: "Daniel Dean, Jessica Nunez , Erin Walls, Chaoyu Zhai"
 date: "12/13/2019"
-output: word_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -11,18 +13,175 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Research Question: 
 
-We set out to explore which countries are most frequently referenced in the iconic Jeopardy! quiz show over its current 35-season run. In addition, we were interested in relationships with indicators like GDP and land area, as well as which areas seem to attract the highest premiums.
+  We set out to explore which countries are most frequently referenced in the iconic Jeopardy! quiz show over its current 35-season run. In addition, we were interested in relationships with indicators like GDP and land area, as well as which areas seem to attract the highest premiums.
 
 ## Data Processing:
 
- Our dataset was drawn from Github user `jwolle`, who hosts a compilation of questions and answers asked in every season of Jeopardy! since its September 10, 1984 premiere, along with peripheral data including the monetary reward assigned to correct answers, comments from host Alex Trebak, whether the question was a Daily Double, and more. This trove of data, which we read in with the `readr` function `read_tsv`, is already nicely formatted and adheres to Hadley Wickham’s Tidy Data philosophy for organization and information density, making the initial import an easy step. However, obtaining a viable list of countries proved more challenging. To account for various ways of referring to a given country, we used a list of up to eight synonyms for countries in the package `rworldmap`, which contains country border polygons with associated data, and which we used for downstream mapping. These were organized by three-digit United Nations ISO3 codes, which provided a backbone for the rest of the analysis (e.g. “The United States” and “U.S.A” share the code “usa”). Because restricting matches to , we used the Hadley Wickham-authored `rvest` package to scrape the HTML table from the Wikipedia entry on Demonyms (adjectives associated with a given country and nationality), which we matched to existing country names for additional nuance. We used the `pivot_longer` function from `tidyr` to collapse the resulting table into two paired columns, one giving ISO3 codes and one giving the alternative country names. From there, the `stringr` package’s `str_extract_all` function was used to pull matches from our list of country names/adjectives, with any adjacent alphanumerical character excluded to avoid false matches like “India” in “Indiana.” Speaking of India, a final challenge was accounting for context-dependent false positives, with the most emblematic example being the common use of “Indians” to refer to Native Americans; category (e.g. “Early American History”) provided some context, but this remains a source of ambiguity, especially in cases like “Georgia O’Keefe” providing a match for the country Georgia. From here, we were able to match the ISO3 codes to `rworldmap’s` data and polygon geometry for mapping and a head-start on analysis. We made liberal use of the `janitor` package’s `clean_names` function, which automatically reformats input column names to uniform lower-case words separated by underscore in this process. 
+  Our dataset was drawn from Github user `jwolle`, who hosts a compilation of questions and answers asked in every season of Jeopardy! since its September 10, 1984 premiere, along with peripheral data including the monetary reward assigned to correct answers, comments from host Alex Trebek, whether the question was a Daily Double, and more. This trove of data, which we read in with the `readr` function `read_tsv`, is already nicely formatted and adheres to Hadley Wickham’s Tidy Data philosophy for organization and information density, making the initial import an easy step. However, obtaining a viable list of countries proved more challenging. To account for various ways of referring to a given country, we used a list of up to eight synonyms for countries in the package `rworldmap`, which contains country border polygons with associated data, and which we used for downstream mapping. These were organized by three-digit United Nations ISO3 codes, which provided a backbone for the rest of the analysis (e.g. “The United States” and “U.S.A” share the code “usa”). Because restricting matches to , we used the Hadley Wickham-authored `rvest` package to scrape the HTML table from the Wikipedia entry on Demonyms (adjectives associated with a given country and nationality), which we matched to existing country names for additional nuance. We used the `pivot_longer` function from `tidyr` to collapse the resulting table into two paired columns, one giving ISO3 codes and one giving the alternative country names. From there, the `stringr` package’s `str_extract_all` function was used to pull matches from our list of country names/adjectives, with any adjacent alphanumerical character excluded to avoid false matches like “India” in “Indiana.” Speaking of India, a final challenge was accounting for context-dependent false positives, with the most emblematic example being the common use of “Indians” to refer to Native Americans; category (e.g. “Early American History”) provided some context, but this remains a source of ambiguity, especially in cases like “Georgia O’Keefe,” which returns a match for the country Georgia. From here, we were able to match the ISO3 codes to `rworldmap’s` data and polygon geometry for mapping and a head-start on analysis. We made liberal use of the `janitor` package’s `clean_names` function, which automatically reformats input column names to uniform lower-case words separated by underscore in this process. 
 
 ## Mapping:
 
-  Given the nature of our question, we used mapping extensively, settling on `rworldmap` for the most part, with help from the `sf` packages `st_as_sf` function, which converts a variety of spatial vector data into the universal ‘simple format’ for downstream mapping with tools like `leaflet`. Because our combined jeopardy and geographic data became quite large over the 35-season run, `select`, `summarize`, and `distinct` from `dplyr` were very helpful in picking relevant rows, creating tallies, averages, etc., and removing redundancies prior to mapping. We also used the `leaflet` and `plotly` packages to create interactive maps based on `rworldmap` polygons and our data. 
+  Given the nature of our question, we used mapping extensively, settling on `rworldmap` for the most part, with help from the `sf` package's `st_as_sf` function, which converts a variety of spatial vector data into the universal ‘simple format’ for downstream mapping with tools like `leaflet`. Because our combined jeopardy and geographic data became quite large over the 35-season run, `select`, `summarize`, and `distinct` from `dplyr` were very helpful in picking relevant rows, creating tallies, averages, etc., and removing redundancies prior to mapping. The `ggplot`, `leaflet`, and `plotly` packages were used to create interactive maps based on `rworldmap` polygons and our data.
+
+## Placeholder for leaflet map
 
 ## Analyses:
 
-  Our question of which countries are mentioned most frequently in Jeopardy was relatively simple to answer. Rather unsurprisingly, the United States was by far the most common, at 16,395 cumulative mentions, well ahead of runner-up France (6,847), the UK (3,844), and the other, mostly European, leaders. Despite the undoubtedly high number of remaining false positives, India remained fairly high in the ranking even after a relatively aggressive category-based filtering at around 3,000 references. We created a leaflet map of cumulative references to each ISO3-coded country (unfortunately we discovered this excluded some historical countries, notably the USSR) for self-guided viewing, along with other variables of interest.
-	We used a relatively straightforward statistical approach in exploring the relationship between jeopardy references and two factors, GDP and land area. In both cases, the data was summarized upstream of mapping to a year/iso3 level, and we then used the base R `stats` function `lm` to fit a simple linear model with the format `count ~ <gdp or landarea>`; these proved to be uniformly significant on inspection with the `Anova` function from `car`. Unsurprisingly, we found a significant positive correlation between GDP and references, with or without the US; when the US was included, it almost single-handedly influenced the slope of the trend with its annual references. While we’d speculated the popularity of relatively small European countries like Italy and Britain, (as well as some Caribbean Islands) could create an inverse relationship between land area and references, there was a relatively consistent positive trend, which appeared largely controlled by Russia’s enormous landmass, as well as relatively large countries like the US, Canada, Brazil, and Australia. 
-	To explore patterns in the distribution of country mentions within daily doubles, the `plotly` package was utilized after creating a `ggplot` object to create an interactive visualitzation. Once again, the United States was by far the most frequently mentioned country in daily doubles at 989 mentions throughout all seasons of Jeopardy!. France was the runner up again with 424 mentions; after that, number of mentions dropped off dramatically, with many countries being mentioned less than 50 times.
+  Our question of which countries are mentioned most frequently in Jeopardy! was relatively simple to answer. Rather unsurprisingly, the United States was by far the most common, at 16,395 cumulative mentions, well ahead of runner-up France (6,847), the UK (3,844), and the other, mostly European, leaders. Despite the undoubtedly high number of remaining false positives, India remained fairly high in the ranking even after a relatively aggressive category-based filtering at around 3,000 references. We created a leaflet map of cumulative references to each ISO3-coded country (unfortunately we discovered this excluded some historical countries, notably the USSR) for self-guided viewing, along with other variables of interest.
+	We used a relatively straightforward statistical approach in exploring the relationship between Jeopardy! references and two factors, GDP and land area. In both cases, the data was summarized upstream of mapping to a year/iso3 level, and we then used the base R `stats` function `lm` to fit a simple linear model with the format `count ~ <gdp or landarea>`; these proved to be uniformly significant on inspection with the `Anova` function from `car`. Unsurprisingly, we found a significant positive correlation between GDP and references, with or without the US; when the US was included, it almost single-handedly influenced the slope of the trend with its annual references. While we had speculated the popularity of relatively small European countries like Italy and Britain, (as well as some Caribbean Islands) could create an inverse relationship between land area and references, there was a relatively consistent positive trend, which appeared largely controlled by Russia’s enormous landmass, as well as relatively large countries like the US, Canada, Brazil, and Australia. 
+	To explore patterns in the distribution of country mentions within daily double answers and questions, the `plotly` package was utilized after creating a `ggplot` object to create an interactive visualitzation. Once again, the United States was by far the most frequently mentioned country in daily doubles at 989 mentions throughout all seasons of Jeopardy!. France was the runner up again with 424 mentions; after that, number of mentions dropped off dramatically, with many countries being mentioned less than 50 times.This distribution pattern seems to follow a distribution similar to the overall number of mentions as described above.
+
+## Placeholder for GDP/land area analysis
+
+
+```{r plotly_code, echo = FALSE, warning = FALSE, message = FALSE, include  = FALSE}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(rworldmap)
+library(rvest)
+library(tidyr)
+library(janitor)
+library(ggplot2)
+library(rgeos)
+library(data.table)
+library(lubridate)
+library(ggthemes)
+library(plotly)
+library(viridis)
+
+data("countryExData")
+data("countryRegions")
+data("countrySynonyms")
+
+# load denonyms
+webpage <- read_html("https://en.wikipedia.org/wiki/List_of_adjectival_and_demonymic_forms_for_countries_and_nations")
+
+
+# upload all seasons data
+jeopardy_all <- read_tsv("master_season1-35.tsv/master_season1-35.tsv")
+
+# filter data
+daily_double_all <- jeopardy_all %>% 
+  filter(daily_double == "yes")
+
+# demonyms
+table <- webpage %>% 
+  html_nodes("table") %>% 
+  html_table(header = F)
+table <- table[[1]]
+
+names(table) = table[1,]
+table <- table %>% 
+  slice(-1) %>% 
+  clean_names()
+
+# converting country synonyms to full list - one ob for each adjectival/demonym
+demonym_table <- table %>% 
+  as.tibble() %>% 
+  mutate(country_entity_name = str_replace(country_entity_name, "\\[.\\]", ""),
+         adjectivals = str_replace(adjectivals, "\\[.\\]", ""),
+         demonyms = str_replace(demonyms, "\\[.\\]", "")) %>% 
+  separate_rows(adjectivals, sep = ",\\s|/|\\sor\\s") %>% 
+  separate_rows(demonyms, sep = ",\\s|/|\\sor\\s")
+
+countrySynonyms_full <- countrySynonyms %>% 
+  pivot_longer(name1:name8, names_to = "name", values_to = "country") %>% 
+  filter(!is.na(country) & country != "") %>% 
+  drop_na()
+
+country_names_full <- countrySynonyms_full %>% 
+  select(-c(name, ID)) %>% 
+  left_join(demonym_table, by = c("country" = "country_entity_name")) %>% 
+  pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>% 
+  select(-name_type) %>% 
+  distinct() %>% 
+  clean_names() %>% 
+  drop_na() %>% 
+  filter(iso3 != "")
+
+# filter answers & questions that have countries mentioned
+country_answers_all <-  daily_double_all %>%
+  filter(str_detect(string = answer, pattern = paste0(paste(
+    country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  mutate(country_a = str_extract_all(string = answer, pattern = paste0(
+    paste(country_names_full$names, collapse = "|"),"[^a-z]"))) %>% 
+  unnest(country_a)
+
+country_questions_all <-  daily_double_all %>%
+  filter(str_detect(string = answer, pattern = paste0(paste(
+    country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  mutate(country_q = str_extract_all(string = question, pattern = paste0(
+    paste(country_names_full$names, collapse = "|"),"[^a-z]"))) %>%
+  unnest(country_q)
+
+# joining iso codes
+country_answers_iso_all <- country_answers_all %>%
+  left_join(country_names_full, by = c("country_a" = "names")) %>%
+  rename(country = country_a) %>%
+  mutate(type = rep("answer", nrow(.)))
+
+country_questions_iso_all <- country_questions_all %>%
+  left_join(country_names_full, by = c("country_q" = "names")) %>%
+  rename(country = country_q)%>%
+  mutate(type = rep("question", nrow(.)))
+
+# one last bit of cleaning to get data required for plotting
+country_all_iso_allszn <- full_join(country_answers_iso_all, 
+                                    country_questions_iso_all) %>%
+  filter(!(category == "AMERICAN INDIANS" & iso3 == "ind"),
+         !(iso3 %in% c("iot", "atf"))) %>% 
+  mutate(iso3 = toupper(iso3))
+
+
+# map creation
+wmap <- getMap(resolution = "low")
+wmap <- spTransform(wmap, CRS("+proj=robin"))
+# get centroids
+centroids <- gCentroid(wmap, byid = TRUE, id = wmap@data$ISO3)
+centroids <- data.frame(centroids)
+setDT(centroids, keep.rownames = TRUE)[]
+setnames(centroids, "rn", "country_iso3c")
+
+countrySynonyms_full <- countrySynonyms_full %>% 
+  mutate_all(toupper)
+
+all_country_iso <- country_all_iso_allszn %>% 
+  mutate(date = ymd(air_date)) %>% 
+  mutate(year = year(date)) %>% 
+  select(c(round, value, daily_double, answer, question, country, iso3,
+           type, date, year)) %>% 
+  group_by(iso3) %>% 
+  summarize(season_count = n()) %>% 
+  left_join(countrySynonyms_full, by = c('iso3' = 'ISO3')) %>%  
+  filter(name == "NAME1") %>% 
+  mutate(country = str_to_title(country))
+
+all_country_iso$hover = with(all_country_iso, paste(country, '<br>',
+                                                    "Total:", season_count))
+
+
+# join new data set to map
+wmap_df <- fortify(wmap, region = "ISO3")
+wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'iso3'))
+wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c'))
+```
+
+```{r plot, echo = FALSE, warning = FALSE, message= FALSE, fig.width = 7}
+# plotly
+p <- ggplot(data = wmap_df) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = season_count,
+                   text = hover)) +
+  labs(fill = "Number of mentions") +
+  theme_map() +
+  scale_fill_viridis_c()
+
+plotly <- ggplotly(p, tooltip = "text") %>% 
+  layout(title = list(text = paste0('Number of country mentions',
+                                    '<br>',
+                                    '<sup>',
+                                    'Daily Doubles, seasons 1-35',
+                                    '</sup>')))
+
+plotly
+```
