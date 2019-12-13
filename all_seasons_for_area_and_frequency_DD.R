@@ -35,25 +35,11 @@ jeopardy_all_season  <-  country_all_iso_all%>%
   clean_names() %>%
   mutate(ratio = count / landarea)
 
-jeopardy_all_season    %>%
-  mutate(Ratio = count / landarea) %>%
-  joinCountryData2Map(joinCode = "ISO3", nameJoinColumn = "iso3", nameCountryColumn = "iso3") %>%
-  mapCountryData(nameColumnToPlot = "Ratio")
 
-library(dlnm)
-
-jeopardy_all_season <- jeopardy_all_season  %>%
-  mutate(Ratio = count / landarea) %>%
-  mutate(year = year(air_date))
-
-#view(jeopardy_all_season) 
-
-mod_2 <- lm(count ~ landarea, data = jeopardy_all_season  )
-mod_2
 
 jeopardy_all_season %>%
   select(iso3, landarea, year, geo_subregion, count) %>%
-  filter(iso3 != 'USA') %>%
+  #filter(iso3 != 'USA') %>%
   distinct() %>%
   group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
   drop_na() %>%
@@ -75,7 +61,7 @@ ggplotly(jeopardy_all_season %>%
   select(iso3, landarea, year, epi_regions, count) %>%
   #filter(iso3 != 'USA') %>%
   distinct() %>%
-  group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+  group_by(year, epi_regions) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
   drop_na() %>%
   nest() %>%
   mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
@@ -86,19 +72,27 @@ ggplotly(jeopardy_all_season %>%
   rename(slope = landarea) %>%
   unnest(data) %>%
   ggplot() +
-  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions)) +
-  geom_abline(aes(slope = slope, intercept = intercept, frame = year)) +
-  facet_wrap(. ~epi_regions)
+  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions, label = iso3)) +
+  geom_abline(aes(slope = slope, intercept = intercept, frame = year, color = epi_regions))
 )
 
 
-tidy(mod_2)
 
-glance(mod_2)
-
-augment(mod_2) %>%
-  ggplot(aes(x = landarea, y = count)) + 
-  geom_point(size = 0.8, alpha = 0.5, col = "gray") + 
-  geom_line(aes(x = landarea, y = .fitted), color = "red", size = 2) + 
-  theme_classic()  
-
+ggplotly(jeopardy_all_season %>%
+           select(iso3, gdp_capita_mrya, year, epi_regions, count) %>%
+           #filter(iso3 != 'USA') %>%
+           distinct() %>%
+           group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+           drop_na() %>%
+           nest() %>%
+           mutate(model = purrr::map(data, ~lm(count ~ gdp_capita_mrya, data = .x) %>% 
+                                       tidy() %>% select(term, estimate))) %>%
+           unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+           pivot_wider(names_from = term, values_from = estimate) %>%
+           clean_names %>%
+           rename(slope = gdp_capita_mrya) %>%
+           unnest(data) %>%
+           ggplot() +
+           geom_point(aes(x = gdp_capita_mrya, y = count, frame = year, color = epi_regions, label = iso3)) +
+           geom_abline(aes(slope = slope, intercept = intercept, frame = year))
+)

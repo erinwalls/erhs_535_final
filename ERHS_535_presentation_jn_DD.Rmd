@@ -93,8 +93,11 @@ library(leaflet)
 library("dplyr")
 library(viridisLite)
 library(janitor)
+library(lubridate)
+library(broom)
+library(plotly)
 
-  country_data_all <-read_csv("country_all_iso_all.csv", )
+country_data_all <-read_csv("country_all_iso_all.csv", )
 
 countriesLow <- countriesLow %>%
   st_as_sf
@@ -164,10 +167,115 @@ leaflet(country_geom_map_data) %>%
 =======
 - Russia, being both relatively popular and a massive 16,679,993 km^2, almost single-handedly sets this trend (see animation), although the next-largest countries in Canada (9458907 km^2), the USA (9210753 km^2) and China (9198094 km^2) are relatively popular as well. 
 
+```{r}
+
+
+jeopardy_all_season  <-  country_data_all%>%
+  mutate(year = year(air_date)) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count)) %>%
+  rename(iso3 = "ISO3V10") %>%
+  clean_names() %>%
+  mutate(ratio = count / landarea)
+
+
+
+ggplotly(jeopardy_all_season %>%
+  select(iso3, landarea, year, epi_regions, count) %>%
+  #filter(iso3 != 'USA') %>%
+  distinct() %>%
+  group_by(year, epi_regions) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+  drop_na() %>%
+  nest() %>%
+  mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
+                              tidy() %>% select(term, estimate))) %>%
+  unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+  pivot_wider(names_from = term, values_from = estimate) %>%
+  clean_names %>%
+  rename(slope = landarea) %>%
+  unnest(data) %>%
+  ggplot() +
+  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions, label = iso3)) +
+  geom_abline(aes(slope = slope, intercept = intercept, frame = year, color = epi_regions))
+)
+
+```
+
 ## GDP and Frequency:
 
 - GDP also showed a positive correlation with frequency of mentions; in this case the USA played an outsize role
 >>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
+
+```{r}
+
+
+ggplotly(jeopardy_all_season %>%
+           select(iso3, gdp_capita_mrya, year, epi_regions, count) %>%
+           #filter(iso3 != 'USA') %>%
+           distinct() %>%
+           group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+           drop_na() %>%
+           nest() %>%
+           mutate(model = purrr::map(data, ~lm(count ~ gdp_capita_mrya, data = .x) %>% 
+                                       tidy() %>% select(term, estimate))) %>%
+           unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+           pivot_wider(names_from = term, values_from = estimate) %>%
+           clean_names %>%
+           rename(slope = gdp_capita_mrya) %>%
+           unnest(data) %>%
+           ggplot() +
+           geom_point(aes(x = gdp_capita_mrya, y = count, frame = year, color = epi_regions, label = iso3)) +
+           geom_abline(aes(slope = slope, intercept = intercept, frame = year))
+)
+
+```
+
+
+## Daily Doubles
+
+### *Placeholder: for some reason my R session keeps ~freezing (the last merge step uses a lot of memory eve after I stop) when I try running `daily_double_and_frequency`*
+
+```{r}
+frequency_map_test <- country_all_iso_all %>%
+  select(value, daily_double, air_date, country, iso3) %>%
+  distinct() %>%
+  mutate(year = ymd(air_date)) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "season_count") %>%
+  ungroup() %>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" ="yes", "FALSE" = "no"),
+         daily_double = as.logical(daily_double)) %>%
+  group_by(iso3) %>%
+  summarize(count = n(), mean_value = mean(value), daily_double_count = sum(daily_double)) %>%
+  full_join(countriesLow_sf, by = c("iso3" = "ISO3")) %>%
+  st_as_sf
+
+
+
+
+
+
+ggplotly(ggplot() +
+  
+  
+  
+  geom_sf(data = frequency_map_test, aes(fill = daily_double_count, color = mean_value)) +
+  
+  
+  
+  scale_fill_viridis_c() +
+    scale_color_viridis_c(option = 'plasma')
+)
+
+```
+
+
 
 ## Conclusion
 
