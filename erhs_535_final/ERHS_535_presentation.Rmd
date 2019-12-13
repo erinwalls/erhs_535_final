@@ -9,9 +9,10 @@ output: powerpoint_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Research Questions
+## Research Question
 What is the most frequently mentioned country in Jeopardy? ...
 ## Introduction
+- We chose to ask this question out of an appreciation for the sciences of geography and cartography
 
 ## Methods
 - Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
@@ -95,7 +96,76 @@ leaflet(test_geom_full) %>%
 
 ```
 
+## Plotly
+- We used the plotly package to display the distribution of countries mentioned in daily doubles and how many times each country was mentioned
 
+```{r plotly}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(rworldmap)
+library(rvest)
+library(tidyr)
+library(janitor)
+library(ggplot2)
+library(rgeos)
+library(data.table)
+library(lubridate)
+library(ggthemes)
+library(plotly)
+library(viridis)
+source("daily_double_and_frequency.R")
+
+# map creation
+wmap <- getMap(resolution = "low")
+wmap <- spTransform(wmap, CRS("+proj=robin"))
+# get centroids
+centroids <- gCentroid(wmap, byid = TRUE, id = wmap@data$ISO3)
+centroids <- data.frame(centroids)
+setDT(centroids, keep.rownames = TRUE)[]
+setnames(centroids, "rn", "country_iso3c")
+
+countrySynonyms_full <- countrySynonyms_full %>% 
+  mutate_all(toupper)
+
+all_country_iso <- country_all_iso_allszn %>% 
+  mutate(date = ymd(air_date)) %>% 
+  mutate(year = year(date)) %>% 
+  select(c(round, value, daily_double, answer, question, country, iso3,
+           type, date, year)) %>% 
+  group_by(iso3) %>% 
+  summarize(season_count = n()) %>% 
+  left_join(countrySynonyms_full, by = c('iso3' = 'ISO3')) %>%  
+  filter(name == "NAME1") %>% 
+  mutate(country = str_to_title(country))
+
+all_country_iso$hover = with(all_country_iso, paste(country, '<br>',
+                                                    "Total:", season_count))
+
+
+# join new data set to map
+wmap_df <- fortify(wmap, region = "ISO3")
+wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'iso3'))
+wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c'))
+
+
+# plotly
+p <- ggplot(data = wmap_df) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = season_count,
+                   text = hover)) +
+  labs(fill = "Number of mentions") +
+  theme_map() +
+  scale_fill_viridis_c()
+
+plotly <- ggplotly(p, tooltip = "text") %>% 
+  layout(title = list(text = paste0('Number of country mentions',
+                                    '<br>',
+                                    '<sup>',
+                                    'Daily Doubles, seasons 1-35',
+                                    '</sup>')))
+
+plotly
+```
 ## Results
 
 ## Conclusion
