@@ -1,0 +1,165 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(broom)
+library(leaflet)
+library(DT)
+library(tidyverse)
+library(lubridate)
+library(ggthemes)
+library(janitor)
+library(rworldmap)
+library(sf)
+library(viridisLite)
+
+
+country_data_all <- read.csv("country_all_iso_all.csv") #exported csv of countries matched by iso3 codes
+
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Landarea and Frequency
+
+
+
+```{r freq map}
+
+
+#country_data_all <- read_csv("country_all_iso_all.csv", )
+
+#using data `countriesLow` from `rworldmap` 
+
+
+#Temporarily removing air date (not sure how to animate/facet/etc. in Leaflet)
+
+country_geom_full <- country_data_all %>%
+  left_join(countryExData, by = c("iso3" = "ISO3V10")) %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  select(country, count, mean_value, iso3) %>%
+  distinct() %>%
+  mutate(iso3 = toupper(iso3)) %>%
+  rename(ISO3 = iso3) 
+
+
+
+country_geom_map_data <- country_geom_full %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  full_join(countriesLow@data) %>%
+  clean_names() 
+
+countriesLow_jeopardy <- countriesLow
+
+countriesLow_jeopardy@data <- country_geom_map_data
+
+
+pal <- colorNumeric(
+  palette = "Greens",
+  domain = countriesLow_jeopardy$count)
+
+
+
+popup_info<- paste0("Country: ",
+                    countriesLow_jeopardy$name, "
+",
+"Population: ",
+country_geom_map_data$pop_est, "
+",
+"Count: ",
+country_geom_map_data$count, "
+",
+"Mean Value: ",
+round(country_geom_map_data$mean_value, 1))
+
+leaflet(countriesLow_jeopardy) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info)
+
+
+```
+
+
+```{r land area}
+
+
+
+
+jeopardy_all_season  <-  country_data_all %>%
+  mutate(year = year(air_date)) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count)) %>%
+  rename(iso3 = "ISO3V10") %>%
+  clean_names() %>%
+  mutate(ratio = count / landarea)
+
+#jeopardy_all_season    %>%
+#  mutate(Ratio = count / landarea) %>%
+#  joinCountryData2Map(joinCode = "ISO3", nameJoinColumn = "iso3", nameCountryColumn = "iso3") %>%
+#  mapCountryData(nameColumnToPlot = "Ratio") 
+
+
+#view(jeopardy_all_season) 
+
+
+ggplotly(jeopardy_all_season %>%
+  select(iso3, landarea, year, epi_regions, count) %>%
+  #filter(iso3 != 'USA') %>%
+  distinct() %>%
+  group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+  drop_na() %>%
+  nest() %>%
+  mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
+                              tidy() %>% select(term, estimate))) %>%
+  unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+  pivot_wider(names_from = term, values_from = estimate) %>%
+  clean_names %>%
+  rename(slope = landarea) %>%
+  unnest(data) %>%
+  ggplot() +
+  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions)) +
+  geom_abline(aes(slope = slope, intercept = intercept, frame = year))
+)
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Summary Datatable
+
+```{r}
+
+
+country_data_all%>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" = "yes", "FALSE" ="no"),
+         daily_double = as.logical(daily_double),
+         year = year(air_date),
+         month = month(air_date)) %>%
+  group_by(iso3) %>%
+  summarize(mean_value = mean(value), count = n(), daily_doubles = sum(daily_double )) %>%
+  left_join(countrySynonyms[,2:3], by = c("iso3" = "ISO3")) %>%
+  rename('primary_name' = name1) %>%
+  select(primary_name, count, mean_value, daily_doubles) %>%
+  DT::datatable()
+  
+
+```

@@ -112,7 +112,7 @@ jeopadry_country_merge_all <- country_all_iso_all %>%
   filter(!is.na(count))
 
 
-write.csv(country_all_iso_all, "country_all_iso_all.csv") #'atomic' version; jeopardy data w/ iso3 codes and counts
-
+write_csv(country_all_iso_all, "country_all_iso_all.csv",row.names = FALSE) 
+write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv")
 
 
