@@ -9,24 +9,16 @@ output: slidy_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+## Introduction:
+
+Jeopardy has been running for 35 seasons. In this project our task was to create a question, and later use R Programming to manipulate raw show data to answer our question. Our raw data included questions, answers, daily double, air date, and notes. We were excited to get more experience in mapping in R, and this seemed like a good opportunity.
+
 ## Research Questions:
 Which countries are most frequently-mentioned in Jeopardy, and how does that relate to the frequency of daily doubles? 
 
 Is there a correlation between land area and mentions in Jeopardy?
 
 Is there a correlation between land area or GDP and mentions in Jeopardy?
-
-
-## Introduction:
-
-
-
-What is the frequency of mentions in DailyDouble for each country?
-
-- Geography, a ripe field for questions in its own right, could also be indicative of values and expectations over time. 
-- We were also excited to get more experience exploring mapping in R, and this seemed like a good opportunity.
-
-
 
 ## Methods:
 
@@ -264,12 +256,44 @@ ggplotly(ggplot() +
 ```
 
 
-
 ## Conclusion
 
 ## Tutorial:
 ### Data Manipulation
 
+- Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
+
+- Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
+
+- The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
+
+## Next Steps . . .
+- We needed a list of names associated with countries
+
+- Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
+
+- We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
+
+## Next Steps Continued . . .
+- To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
+
+- These additional names were also converted to a single column, and matched to ISO3 codes.
+
+## Matching Names
+- We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
+  
+- We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
+  
+## Finally . . .
+
+* Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
+
+* We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
+
+
+## Mapping:
+
+- The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes.
 
 ```{r}
 
@@ -336,69 +360,9 @@ leaflet(country_geom_map_data) %>%
 
 ```
 
-### Lessons Learned
+## Lessons Learned
 - Data Version Control
+- Importance of planning and communication
 
 
 
-
-
-
-## Code Overview and More-Detailed Methods
-
-- Read in Jeopardy question data compiled by Github user `jwolle1`; initially (at all?) used Season 1
-
-- Used `read_csv` from the `readr` package, although we manully downloaded the full dataset, a zipped file.
-
-- The raw data already conformed to tidy data conventions, so no special pre-processing was needed on this front.
-
-## Next Steps . . .
-- We needed a list of names associated with countries
-
-- Our basis was the `CountrySynomnyms` dataframe from the `rworldmap` package, this included up to 8 synonymous names for every country recognized as of 2005 (as well as historical country names), along with 3-letter abbreviations following the ISO3 standard. 
-
-- We used the `pivot_longer` function from `tidyr` to convert this dataframe to two columns: ISO3 names and names (NAs were removed).
-
-## Next Steps Continued . . .
-- To expand this dataset, names from the "lengthend" country names dataframe were matched against a list of country adjectives and demonyms (e.g. "Russian", "Russians") scraped from the Wikipedia page using the `rvest` package.
-
-- These additional names were also converted to a single column, and matched to ISO3 codes.
-
-## Matching Names
-- We then used the `str_detect` and `str_extract_all` functions from `stringr` in tandem to locate and extract matches in Jeopardy questions or answers. 
-  
-- We avoided some false positives (e.g. "Indiana" includes the string "India") by excluding any match that was follwed by a letter (our target list included both singualr and plural forms of country adjectives/demonyms). 
-  
-## Finally . . .
-
-* Because `str_extract_all` generates a list, we used <an option> to add NA values to equialize the products' lengths, and `unnest` from <`?`> to convert these into separate rows.
-
-* We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
-
-
-## Mapping:
-
-- The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes.
-
-
-
-```{r}
-  
-```
-
-
-
-- From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
-
-## What is the most frequently mentioned country in Jeopardy? 
-
-- We used leaflet package to map out out the countries mentioned, how many times they were mentiones and the population of each country. 
-
-
-## Is there a correlation between land area and mentions in Jeopardy?
-- 
-```{r}
-
-```
-## What is the frequency of mentions in DailyDouble for each country?
-- 
