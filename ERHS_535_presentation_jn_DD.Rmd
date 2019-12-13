@@ -17,21 +17,20 @@ Is there a correlation between land area and mentions in Jeopardy?
 Is there a correlation between land area or GDP and mentions in Jeopardy?
 
 
-## Introduction
+## Introduction:
 
-<<<<<<< HEAD
+
 
 What is the frequency of mentions in DailyDouble for each country?
-```{r}
-=======
+
 - Geography, a ripe field for questions in its own right, could also be indicative of values and expectations over time. 
 - We were also excited to get more experience exploring mapping in R, and this seemed like a good opportunity.
->>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
 
 
-## Methods
 
-## Data Processing
+## Methods:
+
+### Data Processing
 
 - We started with Github user `jwolle`'s extensive Jeopardy archives, which span from September 1984 to July of this year. These were easy to read in using `tidyverse` tools
 
@@ -47,36 +46,32 @@ What is the frequency of mentions in DailyDouble for each country?
 
 - Another interesting wrinkle was words like "French" and "Dutch", which are both adjectives and demonyms, being double-counted, briefly making France appear to be the most popular country in Jeopardy history. 
 
-## Mapping
+### Mapping
 
 - We matched our ISO3-linked jeopardy data to geographic data (vector polygons defining borders, among other information) from the `rworldmap` package using the `join` family of functions from `dplyr`
 
 - Once summarized (to optimize memory usage) and converted into an `sf`, or *simple feature* format, we were able to pass these objects to theinteractive mapping package `leaflet`, among other downstream applications.
 
 
-## Statistics
+### Statistics
 
-<<<<<<< HEAD
 - The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
 
 ```{r, }
 
 
 ```
-=======
+
 - We used relatively basic analyses in this project
 
 - For the question of which countries were most frequently mentioned, we simply grouped by iso3 codes, and counted the number of instances of each, either over all time, or within a given year.
 
 - To explore the question of how reference frequency is realted to land area and GDP, we fit linear models to test the correlation of land area to mentions.
->>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
-
-
 
  
-## Results
+## Results:
 
-### Frequency:
+### Frequency
 
 - Unsurprisingly, America is the most-commonly mentioned country, at 16,395 references over the years, well ahead of runner-up France with 6,847, and the UK at 3,844.
 
@@ -144,19 +139,16 @@ leaflet(country_geom_map_data) %>%
 
 
 ```
-<<<<<<< HEAD
+
 
 ## Is there a correlation between land area and mentions in Jeopardy?
 - 
-```{r}
-=======
->>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
 
 ## Land Area and Frequency:
 
 - We'd speculated that the popularity of relatively small European countries and (to a lesser extent) Carribean Islands could lead to a relatively weak, or even negative, correlation between country size and popularity in questions/answers, but found a fairly consistent, positive correlation.
 
-<<<<<<< HEAD
+
 
 - 
 
@@ -164,10 +156,8 @@ leaflet(country_geom_map_data) %>%
 
 
 - 
-=======
-- Russia, being both relatively popular and a massive 16,679,993 km^2, almost single-handedly sets this trend (see animation), although the next-largest countries in Canada (9458907 km^2), the USA (9210753 km^2) and China (9198094 km^2) are relatively popular as well. 
 
-```{r}
+- Russia, being both relatively popular and a massive 16,679,993 km^2, almost single-handedly sets this trend (see animation), although the next-largest countries in Canada (9458907 km^2), the USA (9210753 km^2) and China (9198094 km^2) are relatively popular as well. 
 
 
 jeopardy_all_season  <-  country_data_all%>%
@@ -210,11 +200,9 @@ ggplotly(jeopardy_all_season %>%
 ## GDP and Frequency:
 
 - GDP also showed a positive correlation with frequency of mentions; in this case the USA played an outsize role
->>>>>>> e69381000dc5e04a542d099038e345129fb3a4f2
-
-```{r}
 
 
+*
 ggplotly(jeopardy_all_season %>%
            select(iso3, gdp_capita_mrya, year, epi_regions, count) %>%
            #filter(iso3 != 'USA') %>%
@@ -279,8 +267,9 @@ ggplotly(ggplot() +
 
 ## Conclusion
 
-## Tutorial
+## Tutorial:
 ### Data Manipulation
+
 
 ```{r}
 
@@ -349,6 +338,7 @@ leaflet(country_geom_map_data) %>%
 
 ### Lessons Learned
 - Data Version Control
+
 
 
 
