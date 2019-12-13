@@ -22,7 +22,7 @@ Is there a correlation between land area or GDP and mentions in Jeopardy?
 - We were also excited to get more experience exploring mapping in R, and this seemed like a good opportunity.
 
 
-### Methods
+## Methods
 
 ## Data Processing
 
@@ -32,17 +32,42 @@ Is there a correlation between land area or GDP and mentions in Jeopardy?
 
 - We used regex matching with package `stringr` to extract instances of names in our country list from Jeopardy questions and answers.
 
-- United Nations ISO3 codes (FRA for France, GBR for Britain, etc.) were the backbone of our dataset, allowing us to associate terms (e.g. we linked "China","Chinese","PRC",  and "People's Republic of China", to the ISO3 code "CHN")
+##
 
-- Naturally, there were some complications; most notably, "Indian" frequently referred to Native Americans, which we were able to partially mitigate from Category context (e.g. "Colonial America", "Native Americans"). 
+- United Nations ISO3 codes were the backbone of our dataset, allowing us to associate terms (e.g. we linked "China","Chinese","PRC",  and "People's Republic of China", to the ISO3 code "CHN")
 
-- Another interesting wrinkle was words like "French" and "Dutch", which are both an adjective and a demonym, being double-counted, briefly making France appear to be the most popular country in Jeopardy history. 
+- Naturally, there were some complications; most notably, "Indian" frequently referred to Native Americans. We were able to partially mitigate this with Category context (e.g. "Colonial America", "Native Americans"). 
+
+- Another interesting wrinkle was words like "French" and "Dutch", which are both adjectives and demonyms, being double-counted, briefly making France appear to be the most popular country in Jeopardy history. 
 
 ## Mapping
 
 - We matched our ISO3-linked jeopardy data to geographic data (vector polygons defining borders, among other information) from the `rworldmap` package using the `join` family of functions from `dplyr`
 
 - Once summarized (to optimize memory usage) and converted into an `sf`, or *simple feature* format, we were able to pass these objects to theinteractive mapping package `leaflet`, among other downstream applications.
+
+
+## Statistics
+
+- We used relatively basic analyses in this project
+
+- For the question of which countries were most frequently mentioned, we simply grouped by iso3 codes, and counted the number of instances of each, either over all time, or within a given year.
+
+- To explore the question of how reference frequency is realted to land area and GDP, we fit linear models to test the correlation of land area to mentions.
+
+
+
+ 
+## Results
+
+### Frequency:
+
+- Unsurprisingly, America is the most-commonly mentioned country, at 16,395 references over the years, well ahead of runner-up France with 6,847, and the UK at 3,844.
+
+- The US, India, and Mexico were the only non-European countries that made the all-time top 10 (also those with >2,000 references), although Japan and Canada were relatively close behind in the 1,800s.  
+
+- While additional false positives undoubtedly made it through, India was genuinely popular in geography and history questions, as well as the subject of some tailor-made categories ("India", "A Passage to India", "Punjab", etc.)
+
 
 ```{r Leaflet Map, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -77,7 +102,7 @@ country_geom_map_data <- country_geom_full %>%
   clean_names() %>%
   st_as_sf
 
-pal <- colorNumeric(
+pal <- colorQuantile(
   palette = "Greens",
   domain = country_geom_map_data$count)
 
@@ -95,19 +120,21 @@ popup_info<- paste0("<b>Country:</b> ",
 
 leaflet(country_geom_map_data) %>%
   addTiles() %>%
-  addPolygons(color = ~pal(count), popup = popup_info)
+  addPolygons(color = ~pal(count), popup = popup_info) %>%
+  addLegend(pal = pal, values = ~count, position = 'topright')
 
 
 ```
 
- 
-## Results
-- France is the most mentioned country coming in at 1,070 mentions throughout all the seasons. 
+## Land Area and Frequency:
 
-- The country with biger landarea or higher GDP has higher chance to be mentioned in Jeopardy.
+- We'd speculated that the popularity of relatively small European countries and (to a lesser extent) Carribean Islands could lead to a relatively weak, or even negative, correlation between country size and popularity in questions/answers, but found a fairly consistent, positive correlation.
 
+- Russia, being both relatively popular and a massive 16,679,993 km^2, almost single-handedly sets this trend (see animation), although the next-largest countries in Canada (9458907 km^2), the USA (9210753 km^2) and China (9198094 km^2) are relatively popular as well. 
 
-- 
+## GDP and Frequency:
+
+- GDP also showed a positive correlation with frequency of mentions; in this case the USA played an outsize role
 
 ## Conclusion
 

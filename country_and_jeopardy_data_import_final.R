@@ -85,6 +85,7 @@ country_merge_all <- full_join(country_answers_all, country_questions_all) %>%
 
 india_false_positives <- c("AMERICAN INDIANS", 
                            "AMERICAN INDIAN TRIBES",
+                           "NATIVE AMERICANS",
                            "EARLY AMERICA",
                            "INDIANS",
                            "STATE CAPITALS",
@@ -121,6 +122,7 @@ india_false_positives <- c("AMERICAN INDIANS",
                            "WILD WEST",
                            "TV COWBOYS & INDIANS",
                            "TECUMSEH",
+                           "U.S.A.",
                            "AMERICAN HISTORY",
                            "U.S. CITIES",
                            "ILLINOIS, IOWA OR INDIANA",
@@ -172,7 +174,7 @@ write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv")
 #  filter(str_detect(country, paste0("(",paste(country_names_full$names, collapse = "|"),")","($|[^a-zA-Z])"))) %>%
 #  filter(!(category %in% india_false_positives & iso3 %in% c("IND","GEO"))) %>% 
 # filter(!(str_detect(category, "NATIVE|AMERICA|USA|U.S.|") && iso3 == "IND")) %>% #Common false positives w/ Native Americans, US States
- # filter(!(iso3 %in% c("IOT","ATF") & country %in% c("British","French")))# double-counting British, French, territories
+# filter(!(iso3 %in% c("IOT","ATF") & country %in% c("British","French"))) # double-counting British, French, territories
 
 
 
