@@ -62,17 +62,15 @@ country_names_full <- countrySynonyms_full %>%
 
 country_questions_all <-  jeopardy_all %>%
   #filter(year(air_date) %in% 2004:2010) %>%
-  mutate(country_q = str_extract_all(string = question, pattern = paste0("(",paste(country_names_full$names,
-                                                                                   collapse = "|"),")",
-                                                                         "($|[^a-zA-Z])"))) %>%
+  mutate(country_q = str_extract_all(string = question, pattern = paste0(paste(country_names_full$names, collapse = "|"),
+                                                                         "[^a-z]"))) %>%
   filter(!is.na(country_q)) %>%
   unnest(country_q)
 
 country_answers_all <-  jeopardy_all %>%
   #filter(year(air_date) %in% 2004:2010) %>%
-  mutate(country_a = str_extract_all(string = answer, pattern = paste0("(",paste(country_names_full$names,
-                                                                                 collapse = "|"),")",
-                                                                       "($|[^a-zA-Z])"))) %>%
+  mutate(country_a = str_extract_all(string = answer, pattern = paste0(paste(country_names_full$names, collapse = "|"),
+                                                                         "[^a-z]"))) %>%
   filter(!is.na(country_a)) %>%
   unnest(country_a)
 
@@ -83,57 +81,10 @@ country_merge_all <- full_join(country_answers_all, country_questions_all) %>%
 
 #country_merge_all_4_10 <- country_merge_all
 
-india_false_positives <- c("AMERICAN INDIANS", 
-                           "AMERICAN INDIAN TRIBES",
-                           "NATIVE AMERICANS",
-                           "EARLY AMERICA",
-                           "INDIANS",
-                           "STATE CAPITALS",
-                           "ABBREVIATED U.S. STATES",
-                           "THE 50 STATES",
-                           "U.S. GOVERNMENT JOBS",
-                           "STATES' LONGEST RIVERS",
-                           "THE MIDWEST",
-                           "U.S.A",
-                           "19th CENTURY AMERICA",
-                           "U.S. HISTORY",
-                           "THE 50 STATES",
-                           "STATE FAIRS",
-                           "U.S. GEOGRAPHY",
-                           "IN FLORIDA",
-                           "INDIANA",
-                           "THE AMERICAN MUSEUM OF NATURAL HISTORY",
-                           "THE INDIANS",
-                           "STATE BIRDS",
-                           "U.S LAKES AND RIVERS",
-                           "GEORGIA ON MY MIND",
-                           "COLLEGE SPORTS TEAMS NICKNAMES",
-                           "STATE NAMES",
-                           "U.S. STATES",
-                           "THANKSGIVING",
-                           "INDIANS",
-                           "THE LARGEST U.S. STATE",
-                           "PRESIDENTIAL RELATIVES",
-                           "STATE FISH",
-                           "COLLEGE SPORTS",
-                           "COWBOYS & INDIANS",
-                           "COLLEGE HOOPS",
-                           "COLONIAL AMERICA",
-                           "WILD WEST",
-                           "TV COWBOYS & INDIANS",
-                           "TECUMSEH",
-                           "U.S.A.",
-                           "AMERICAN HISTORY",
-                           "U.S. CITIES",
-                           "ILLINOIS, IOWA OR INDIANA",
-                           "ON THE U.S. MAP",
-                           "BASEBALL",
-                           "NFL LOGOS") # Not exhaustive, but probably helps
-
 country_all_iso_all <- country_merge_all %>%
   left_join(country_names_full, by = c("country" = "names")) %>%
-  filter(!(category %in% india_false_positives & iso3 %in% c("ind","geo")), #Common false positives w/ Native Americans, US States
-         !(iso3 %in% c("iot","atf") & country %in% c("British","French"))) %>% # double-counting British, French, territories
+  filter(!(category %in% c("AMERICAN INDIANS", "AMERICAN INDIAN TRIBES") & iso3 == "ind"),
+         !(iso3 %in% c("iot","atf"))) %>% #getting rid of some more fasle positives
   mutate(iso3 = toupper(iso3),
          iso3 = as.factor(iso3))
   
@@ -161,22 +112,7 @@ jeopadry_country_merge_all <- country_all_iso_all %>%
   filter(!is.na(count))
 
 
-write_csv(country_all_iso_all, "country_all_iso_all.csv") 
-write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv")
-
-
-jeopadry_country_merge_all <- read_csv("jeopadry_country_merge_all.csv")
-
-country_all_iso_all <- jeopadry_country_merge_all %>%
-  select(round:count) %>%
-  rename(iso3 = ISO3V10)
-
-
-country_all_iso_all<- country_all_iso_all %>%
-  filter(str_detect(country, paste0("(",paste(country_names_full$names, collapse = "|"),")","($|[^a-zA-Z])"))) %>%
-  filter(!(category %in% india_false_positives & iso3 %in% c("IND","GEO"))) %>% 
- filter(!(str_detect(category, "NATIVE|AMERICA|USA|U.S.|") && iso3 == "IND")) %>% #Common false positives w/ Native Americans, US States
- filter(!(iso3 %in% c("IOT","ATF") & country %in% c("British","French"))) # double-counting British, French, territories
+write.csv(country_all_iso_all, "country_all_iso_all.csv") #'atomic' version; jeopardy data w/ iso3 codes and counts
 
 
 
