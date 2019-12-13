@@ -10,6 +10,8 @@ library(rvest)
 library(magrittr)
 library(janitor)
 library(lubridate)
+library(broom)
+
 data("countryExData")
 data("countryRegions")
 data("countrySynonyms")
@@ -90,7 +92,6 @@ ggplotly(jeopardy_all_season %>%
 )
 
 
-library(broom)
 tidy(mod_2)
 
 glance(mod_2)
