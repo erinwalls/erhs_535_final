@@ -16,18 +16,6 @@ library(ggthemes)
 library(plotly)
 library(viridis)
 
-# upload season 1 Jeopardy data
-jeopardy_s1 <- read_tsv(
-  "https://raw.githubusercontent.com/jwolle1/jeopardy_clue_dataset/master/season1.tsv")
-
-# look at Jeopardy data
-jeopardy_s1 # has character column which tells if clue is a daily double
-
-#filter to clues that are daily doubles
-# library(dplyr)
-daily_double <- jeopardy_s1 %>% 
-  filter(daily_double == "yes") # 62 clues which are daily doubles in season 1
-
 
 data("countryExData")
 data("countryRegions")
@@ -107,6 +95,7 @@ country_questions_iso_all <- country_questions_all %>%
   rename(country = country_q)%>%
   mutate(type = rep("question", nrow(.)))
 
+# one last bit of cleaning to get data required for plotting
 country_all_iso_allszn <- full_join(country_answers_iso_all, 
                                     country_questions_iso_all) %>%
   filter(!(category == "AMERICAN INDIANS" & iso3 == "ind"),
@@ -142,12 +131,6 @@ wmap_df <- fortify(wmap, region = "ISO3")
 wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'iso3'))
 wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c'))
 
-# attempt at gif creation
-ggplot(data = wmap_df) +
-  geom_polygon(aes(x = long, y = lat, group = group,fill = season_count)) +
-  theme_void() +
-  theme(legend.position = "bottom") +
-  transition_states(year)
 
 # plotly
 p <- ggplot(data = wmap_df) +
