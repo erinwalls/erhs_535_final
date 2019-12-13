@@ -81,7 +81,7 @@ library(lubridate)
 library(broom)
 library(plotly)
 
-  country_data_all <-read_csv("country_all_iso_all.csv", )
+country_data_all <-read_csv("country_all_iso_all.csv", )
 
 countriesLow <- countriesLow %>%
   st_as_sf
@@ -154,26 +154,6 @@ jeopardy_all_season  <-  country_data_all%>%
 
 
 
-jeopardy_all_season %>%
-  select(iso3, landarea, year, geo_subregion, count) %>%
-  #filter(iso3 != 'USA') %>%
-  distinct() %>%
-  group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
-  drop_na() %>%
-  nest() %>%
-  mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
-                              tidy() %>% select(term, estimate))) %>%
-  unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
-  pivot_wider(names_from = term, values_from = estimate) %>%
-  clean_names %>%
-  rename(slope = landarea) %>%
-  unnest(data) %>%
-  ggplot() +
-  geom_point(aes(x = landarea, y = count, color = year)) +
-  geom_abline(aes(slope = slope, intercept = intercept, color = year))
-
-
-
 ggplotly(jeopardy_all_season %>%
   select(iso3, landarea, year, epi_regions, count) %>%
   #filter(iso3 != 'USA') %>%
@@ -226,6 +206,41 @@ ggplotly(jeopardy_all_season %>%
 
 ## Daily Doubles
 
+### *Placeholder: for some reason my R session keeps ~freezing (the last merge step uses a lot of memory eve after I stop) when I try running `daily_double_and_frequency`*
+
+```{r}
+frequency_map_test <- country_all_iso_all %>%
+  select(value, daily_double, air_date, country, iso3) %>%
+  distinct() %>%
+  mutate(year = ymd(air_date)) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "season_count") %>%
+  ungroup() %>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" ="yes", "FALSE" = "no"),
+         daily_double = as.logical(daily_double)) %>%
+  group_by(iso3) %>%
+  summarize(count = n(), mean_value = mean(value), daily_double_count = sum(daily_double)) %>%
+  full_join(countriesLow_sf, by = c("iso3" = "ISO3")) %>%
+  st_as_sf
+
+
+
+
+
+
+ggplotly(ggplot() +
+  
+  
+  
+  geom_sf(data = frequency_map_test, aes(fill = daily_double_count, color = mean_value)) +
+  
+  
+  
+  scale_fill_viridis_c() +
+    scale_color_viridis_c(option = 'plasma')
+)
+
+```
 
 
 
