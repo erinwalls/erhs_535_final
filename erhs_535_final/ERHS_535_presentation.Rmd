@@ -1,7 +1,7 @@
 ---
 title: "R Programming Presentation"
-author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
-date: "12/5/2019"
+author: "Daniel Dean, Jessica Nunez, Erin Walls, Chayou Zhai"
+date: "12/13/2019"
 output: powerpoint_presentation
 ---
 
@@ -42,14 +42,14 @@ What is the most frequently mentioned country in Jeopardy? ...
 * We added the source (question or answer) as a metadata column, and merged both derived datasets to get a total frequency.
 
 
-## Mapping:
+## Mapping
 
 - The resulting table, with the original jeopardy data, our fequency tallies, and the ISO3 codes, was matched to a world map <*~`LowRest~` or something*> bundled with `rworldmap`, which also included ISO3 codes. 
 
-- From there, were were able to use the `leaflet` package to make an interactive world mapwith frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
+- From there, we were able to use the `leaflet` package to make an interactive world map with frequncy of references in jeopardy color-coded with the `scheme we end up using` in <`ggplot?`>
 
 ## Leaflet
-- We used leaflet package to map out out the countries mentioned, how many times they were mentiones and the airdates when they were mentioned. 
+- We used leaflet package to map out out the countries mentioned, how many times they were mentioned and the airdates when they were mentioned. 
 
 ```{r pressure}
 library("ggplot2")
