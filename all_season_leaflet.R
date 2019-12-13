@@ -104,7 +104,7 @@ popup_info<- paste0("<b>Country:</b> ",
                     round(country_geom_map_data$mean_value))
 
 
-
+#
 
 leaflet(country_geom_map_data) %>%
   addTiles() %>%
