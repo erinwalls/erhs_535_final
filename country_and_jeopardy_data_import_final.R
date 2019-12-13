@@ -94,6 +94,9 @@ india_false_positives <- c("AMERICAN INDIANS",
                            "STATES' LONGEST RIVERS",
                            "THE MIDWEST",
                            "U.S.A",
+                           "19th CENTURY AMERICA",
+                           "U.S. HISTORY",
+                           "THE 50 STATES",
                            "STATE FAIRS",
                            "U.S. GEOGRAPHY",
                            "IN FLORIDA",
@@ -105,6 +108,9 @@ india_false_positives <- c("AMERICAN INDIANS",
                            "GEORGIA ON MY MIND",
                            "COLLEGE SPORTS TEAMS NICKNAMES",
                            "STATE NAMES",
+                           "U.S. STATES",
+                           "THANKSGIVING",
+                           "INDIANS",
                            "THE LARGEST U.S. STATE",
                            "PRESIDENTIAL RELATIVES",
                            "STATE FISH",
@@ -112,7 +118,11 @@ india_false_positives <- c("AMERICAN INDIANS",
                            "COWBOYS & INDIANS",
                            "COLLEGE HOOPS",
                            "COLONIAL AMERICA",
+                           "WILD WEST",
+                           "TV COWBOYS & INDIANS",
                            "TECUMSEH",
+                           "AMERICAN HISTORY",
+                           "U.S. CITIES",
                            "ILLINOIS, IOWA OR INDIANA",
                            "ON THE U.S. MAP",
                            "BASEBALL",
@@ -154,14 +164,15 @@ write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv")
 
 
 #country_all_iso_all <- jeopadry_country_merge_all %>%
-#  select(round:count)
+#  select(round:count) %>%
+#  rename(iso3 = ISO3V10)
 
 
 #country_all_iso_all<- country_all_iso_all %>%
-#  filter(str_detect(country, paste0("(",paste(country_names_full$names, collapse = "|"),")","($|[^a-zA-Z])")))
+#  filter(str_detect(country, paste0("(",paste(country_names_full$names, collapse = "|"),")","($|[^a-zA-Z])"))) %>%
+#  filter(!(category %in% india_false_positives & iso3 %in% c("IND","GEO"))) %>% 
+# filter(!(str_detect(category, "NATIVE|AMERICA|USA|U.S.|") && iso3 == "IND")) %>% #Common false positives w/ Native Americans, US States
+ # filter(!(iso3 %in% c("IOT","ATF") & country %in% c("British","French")))# double-counting British, French, territories
 
 
-#country_all_iso_all <- country_all_iso_all %>%
-#  filter(!(category %in% india_false_positives & iso3 %in% c("ind","geo")), #Common false positives w/ Native Americans, US States
-#        !(iso3 %in% c("iot","atf") & country %in% c("British","French"))) # double-counting British, French, territories
 
