@@ -63,17 +63,22 @@ demonym_table <- table %>%
   separate_rows(adjectivals, sep = ",\\s|/|\\sor\\s") %>% 
   separate_rows(demonyms, sep = ",\\s|/|\\sor\\s")
 
+
 countrySynonyms_full <- countrySynonyms %>% 
   pivot_longer(name1:name8, names_to = "name", values_to = "country") %>% 
   filter(!is.na(country) & country != "") %>% 
+  drop_na() %>% 
   mutate_all(toupper)
 
 country_names_full <- countrySynonyms_full %>% 
   select(-c(name, ID)) %>% 
   left_join(demonym_table, by = c("country" = "country_entity_name")) %>% 
-  pivot_longer(country:demonyms, names_to = "name_type", values_to = 
-                 "names") %>% 
-  drop_na()
+  pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>% 
+  select(-name_type) %>% 
+  distinct() %>% 
+  clean_names() %>% 
+  drop_na() %>% 
+  filter(iso3 != "")
 
 # filter answers & questions that have countries mentioned
 country_answers_all <-  daily_double_all %>%
@@ -103,8 +108,9 @@ country_questions_iso_all <- country_questions_all %>%
 
 country_all_iso_allszn <- full_join(country_answers_iso_all, 
                                     country_questions_iso_all) %>%
-  filter(!(category == "AMERICAN INDIANS" & ISO3 == "ind")) %>% 
-  mutate_all(toupper)
+  filter(!(category == "AMERICAN INDIANS" & iso3 == "ind"),
+         !(iso3 %in% c("iot", "atf"))) %>% 
+  mutate(iso3 = toupper(iso3))
 
 
 # map creation
@@ -119,20 +125,20 @@ setnames(centroids, "rn", "country_iso3c")
 all_country_iso <- country_all_iso_allszn %>% 
   mutate(date = ymd(air_date)) %>% 
   mutate(year = year(date)) %>% 
-  select(c(round, value, daily_double, answer, question, country, ISO3,
-           name_type, type, date, year)) %>% 
-  group_by(ISO3) %>% 
+  select(c(round, value, daily_double, answer, question, country, iso3,
+           type, date, year)) %>% 
+  group_by(iso3) %>% 
   summarize(season_count = n()) %>% 
-  left_join(countrySynonyms_full, by = c('ISO3' = 'ISO3')) %>% 
+  left_join(countrySynonyms_full, by = c('iso3' = 'ISO3')) %>%  
   filter(name == "NAME1") %>% 
   mutate(country = str_to_title(country)) %>% 
   mutate(hover = with(all_country_iso, paste(country, '<br>',
-                                                     "Total:", season_count)))
+                                                    "Total:", season_count)))
 
 
 # join new data set to map
 wmap_df <- fortify(wmap, region = "ISO3")
-wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'ISO3'))
+wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'iso3'))
 wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c'))
 
 # attempt at gif creation
@@ -146,6 +152,8 @@ ggplot(data = wmap_df) +
 p <- ggplot(data = wmap_df) +
   geom_polygon(aes(x = long, y = lat, group = group, fill = season_count,
                    text = hover)) +
+  labs(title = "Number of Country Mentions\nDaily Doubles Season 1 through 35",
+       fill = "Number of Mentions") +
   theme_map()
 
 plotly <- ggplotly(p, tooltip = "text")
