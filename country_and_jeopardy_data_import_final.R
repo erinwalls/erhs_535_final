@@ -165,16 +165,18 @@ write_csv(country_all_iso_all, "country_all_iso_all.csv")
 write_csv(jeopadry_country_merge_all, "jeopadry_country_merge_all.csv")
 
 
-#country_all_iso_all <- jeopadry_country_merge_all %>%
-#  select(round:count) %>%
-#  rename(iso3 = ISO3V10)
+jeopadry_country_merge_all <- read_csv("jeopadry_country_merge_all.csv")
+
+country_all_iso_all <- jeopadry_country_merge_all %>%
+  select(round:count) %>%
+  rename(iso3 = ISO3V10)
 
 
-#country_all_iso_all<- country_all_iso_all %>%
-#  filter(str_detect(country, paste0("(",paste(country_names_full$names, collapse = "|"),")","($|[^a-zA-Z])"))) %>%
-#  filter(!(category %in% india_false_positives & iso3 %in% c("IND","GEO"))) %>% 
-# filter(!(str_detect(category, "NATIVE|AMERICA|USA|U.S.|") && iso3 == "IND")) %>% #Common false positives w/ Native Americans, US States
-# filter(!(iso3 %in% c("IOT","ATF") & country %in% c("British","French"))) # double-counting British, French, territories
+country_all_iso_all<- country_all_iso_all %>%
+  filter(str_detect(country, paste0("(",paste(country_names_full$names, collapse = "|"),")","($|[^a-zA-Z])"))) %>%
+  filter(!(category %in% india_false_positives & iso3 %in% c("IND","GEO"))) %>% 
+ filter(!(str_detect(category, "NATIVE|AMERICA|USA|U.S.|") && iso3 == "IND")) %>% #Common false positives w/ Native Americans, US States
+ filter(!(iso3 %in% c("IOT","ATF") & country %in% c("British","French"))) # double-counting British, French, territories
 
 
 
