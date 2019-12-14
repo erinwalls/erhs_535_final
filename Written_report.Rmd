@@ -23,6 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
   Given the nature of our question, we used mapping extensively, settling on `rworldmap` for the most part, with help from the `sf` package's `st_as_sf` function, which converts a variety of spatial vector data into the universal ‘simple format’ for downstream mapping with tools like `leaflet`. Because our combined jeopardy and geographic data became quite large over the 35-season run, `select`, `summarize`, and `distinct` from `dplyr` were very helpful in picking relevant rows, creating tallies, averages, etc., and removing redundancies prior to mapping. The `ggplot`, `leaflet`, and `plotly` packages were used to create interactive maps based on `rworldmap` polygons and our data.
 
+### Frequency of Mentions by Country
 ```{r leaflet, echo = FALSE, warning = FALSE, message = FALSE}
 library(tidyverse)
 library(rworldmap)
@@ -88,9 +89,7 @@ leaflet(country_geom_map_data) %>%
 	We used a relatively straightforward statistical approach in exploring the relationship between Jeopardy! references and two factors, GDP and land area. In both cases, the data was summarized upstream of mapping to a year/iso3 level, and we then used the base R `stats` function `lm` to fit a simple linear model with the format `count ~ <gdp or landarea>`; these proved to be uniformly significant on inspection with the `Anova` function from `car`. Unsurprisingly, we found a significant positive correlation between GDP and references, with or without the US; when the US was included, it almost single-handedly influenced the slope of the trend with its annual references. While we had speculated the popularity of relatively small European countries like Italy and Britain, (as well as some Caribbean Islands) could create an inverse relationship between land area and references, there was a relatively consistent positive trend, which appeared largely controlled by Russia’s enormous landmass, as well as relatively large countries like the US, Canada, Brazil, and Australia. 
 	To explore patterns in the distribution of country mentions within daily double answers and questions, the `plotly` package was utilized after creating a `ggplot` object to create an interactive visualitzation. Once again, the United States was by far the most frequently mentioned country in daily doubles at 989 mentions throughout all seasons of Jeopardy!. France was the runner up again with 424 mentions; after that, number of mentions dropped off dramatically, with many countries being mentioned less than 50 times.This distribution pattern seems to follow a distribution similar to the overall number of mentions as described above.
 
-
-
-
+### Frequency of Mentions in Daily Doubles by Country
 ```{r plotly_code, echo = FALSE, warning = FALSE, message = FALSE, include  = FALSE}
 
 library(readr)
@@ -117,7 +116,7 @@ webpage <- read_html("https://en.wikipedia.org/wiki/List_of_adjectival_and_demon
 
 
 # upload all seasons data
-jeopardy_all <- read_tsv("master_season1-35/master_season1-35.tsv")
+jeopardy_all <- read_tsv("master_season1-35.tsv/master_season1-35.tsv")
 
 # filter data
 daily_double_all <- jeopardy_all %>% 
