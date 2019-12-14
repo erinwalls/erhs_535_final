@@ -1,0 +1,317 @@
+---
+title: "The 'Jeography' of Jeopardy"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(plotly)
+library(leaflet)
+library(DT)
+library(tidyverse)
+library(lubridate)
+library(ggthemes)
+library(janitor)
+library(rworldmap)
+library(sf)
+```
+
+    
+Row
+-------------------------------------
+    
+--------------------------------------------
+### Interactive Leaflet Map
+
+```{r Leaflet Map, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rworldmap)
+library(sf)
+library(leaflet)
+library("dplyr")
+library(viridisLite)
+library(janitor)
+library(lubridate)
+library(broom)
+library(plotly)
+
+country_data_all <-read_csv("country_all_iso_all.csv", )
+
+countriesLow <- countriesLow %>%
+  st_as_sf
+
+#Temporarily removing air date (not sure how to animate/facet/etc. in Leaflet)
+
+country_geom_full<- country_data_all %>%
+  left_join(countryExData, by = c("iso3" = "ISO3V10")) %>%
+  group_by(iso3) %>%
+  mutate(mean_value = mean(value)) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  select(country, count, mean_value, iso3) %>%
+  distinct() %>%
+  mutate(iso3 = toupper(iso3)) %>%
+  rename(ISO3 = iso3)
+
+country_geom_map_data <- country_geom_full %>%
+  mutate(ISO3 = as.factor(ISO3)) %>%
+  dplyr::full_join(countriesLow) %>%
+  clean_names() %>%
+  st_as_sf
+
+pal <- colorQuantile(
+  palette = "Greens",
+  domain = country_geom_map_data$count)
+
+popup_info<- paste0("<b>Country:</b> ",
+                    country_geom_map_data$name, "<br/>",
+                    "<b>Population:</b>",
+                    country_geom_map_data$pop_est, "<br/>",
+                    "<b>Count:</b>",
+                    country_geom_map_data$count, "<br/>",
+                    "<b>Mean Value:</b> ",
+                    round(country_geom_map_data$mean_value))
+
+
+
+
+leaflet(country_geom_map_data) %>%
+  addTiles() %>%
+  addPolygons(color = ~pal(count), popup = popup_info) %>%
+  addLegend(pal = pal, values = ~count, position = 'topright')
+```
+
+
+### Overview of Numberic Data
+
+```{r}
+
+country_all_iso_all <- read_csv("country_all_iso_all.csv")
+
+country_all_iso_all%>%
+  mutate(daily_double = fct_recode(daily_double, "TRUE" = "yes", "FALSE" ="no"),
+         daily_double = as.logical(daily_double),
+         year = year(air_date),
+         month = month(air_date)) %>%
+  group_by(iso3) %>%
+  summarize(mean_value = mean(value), count = n(), daily_doubles = sum(daily_double )) %>%
+  left_join(countrySynonyms[,2:3], by = c("iso3" = "ISO3")) %>%
+  rename('primary_name' = name1) %>%
+  select(primary_name, count, mean_value, daily_doubles) %>%
+  DT::datatable()
+  
+
+```
+
+
+Row
+-------------------------------------
+    
+### Daily Doubles (plotly)
+
+
+```{r,plotly map, include = FALSE}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(rworldmap)
+library(rvest)
+library(tidyr)
+library(janitor)
+library(ggplot2)
+library(rgeos)
+library(data.table)
+library(lubridate)
+library(ggthemes)
+library(plotly)
+library(viridis)
+
+data("countryExData")
+data("countryRegions")
+data("countrySynonyms")
+
+# load denonyms
+webpage <- read_html("https://en.wikipedia.org/wiki/List_of_adjectival_and_demonymic_forms_for_countries_and_nations")
+
+
+# upload all seasons data
+jeopardy_all <- read_tsv("master_season1-35.tsv")
+
+# filter data
+daily_double_all <- jeopardy_all %>% 
+  filter(daily_double == "yes")
+
+# demonyms
+table <- webpage %>% 
+  html_nodes("table") %>% 
+  html_table(header = F)
+table <- table[[1]]
+
+names(table) = table[1,]
+table <- table %>% 
+  slice(-1) %>% 
+  clean_names()
+
+# converting country synonyms to full list - one ob for each adjectival/demonym
+demonym_table <- table %>% 
+  #as_tibble() %>%  
+  mutate(country_entity_name = str_replace(country_entity_name, "\\[.\\]", ""),
+         adjectivals = str_replace(adjectivals, "\\[.\\]", ""),
+         demonyms = str_replace(demonyms, "\\[.\\]", "")) %>% 
+  separate_rows(adjectivals, sep = ",\\s|/|\\sor\\s") %>% 
+  separate_rows(demonyms, sep = ",\\s|/|\\sor\\s")
+
+countrySynonyms_full <- countrySynonyms %>% 
+  pivot_longer(name1:name8, names_to = "name", values_to = "country") %>% 
+  filter(!is.na(country) & country != "") %>% 
+  drop_na()
+
+country_names_full <- countrySynonyms_full %>% 
+  select(-c(name, ID)) %>% 
+  left_join(demonym_table, by = c("country" = "country_entity_name")) %>% 
+  pivot_longer(country:demonyms, names_to = "name_type", values_to = "names") %>% 
+  select(-name_type) %>% 
+  distinct() %>% 
+  clean_names() %>% 
+  drop_na() %>% 
+  filter(iso3 != "")
+
+# filter answers & questions that have countries mentioned
+country_answers_all <-  daily_double_all %>%
+  filter(str_detect(string = answer, pattern = paste0(paste(
+    country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  mutate(country_a = str_extract_all(string = answer, pattern = paste0(
+    paste(country_names_full$names, collapse = "|"),"[^a-z]"))) %>% 
+  unnest(country_a)
+
+country_questions_all <-  daily_double_all %>%
+  filter(str_detect(string = answer, pattern = paste0(paste(
+    country_names_full$names, collapse = "|"),"[^a-z]")) ) %>%
+  mutate(country_q = str_extract_all(string = question, pattern = paste0(
+    paste(country_names_full$names, collapse = "|"),"[^a-z]"))) %>%
+  unnest(country_q)
+
+# joining iso codes
+country_answers_iso_all <- country_answers_all %>%
+  left_join(country_names_full, by = c("country_a" = "names")) %>%
+  rename(country = country_a) %>%
+  mutate(type = rep("answer", nrow(.)))
+
+country_questions_iso_all <- country_questions_all %>%
+  left_join(country_names_full, by = c("country_q" = "names")) %>%
+  rename(country = country_q)%>%
+  mutate(type = rep("question", nrow(.)))
+
+# one last bit of cleaning to get data required for plotting
+country_all_iso_allszn <- full_join(country_answers_iso_all, 
+                                    country_questions_iso_all) %>%
+  filter(!(category == "AMERICAN INDIANS" & iso3 == "ind"),
+         !(iso3 %in% c("iot", "atf"))) %>% 
+  mutate(iso3 = toupper(iso3))
+
+
+# map creation
+wmap <- getMap(resolution = "low")
+wmap <- spTransform(wmap, CRS("+proj=robin"))
+# get centroids
+centroids <- gCentroid(wmap, byid = TRUE, id = wmap@data$ISO3)
+centroids <- data.frame(centroids)
+setDT(centroids, keep.rownames = TRUE)[]
+setnames(centroids, "rn", "country_iso3c")
+
+countrySynonyms_full <- countrySynonyms_full %>% 
+  mutate_all(toupper)
+
+all_country_iso <- country_all_iso_allszn %>% 
+  mutate(date = ymd(air_date)) %>% 
+  mutate(year = year(date)) %>% 
+  select(c(round, value, daily_double, answer, question, country, iso3,
+           type, date, year)) %>% 
+  group_by(iso3) %>% 
+  summarize(season_count = n()) %>% 
+  left_join(countrySynonyms_full, by = c('iso3' = 'ISO3')) %>%  
+  filter(name == "NAME1") %>% 
+  mutate(country = str_to_title(country))
+
+all_country_iso$hover = with(all_country_iso, paste(country, '<br>',
+                                                    "Total:", season_count))
+
+
+# join new data set to map
+wmap_df <- fortify(wmap, region = "ISO3")
+wmap_df <- left_join(wmap_df, all_country_iso, by = c('id' = 'iso3'))
+wmap_df <- left_join(wmap_df, centroids, by = c('id' = 'country_iso3c'))
+```
+
+
+```{r plotly_map_real}
+# plotly
+p <- ggplot(data = wmap_df) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = season_count,
+                   text = hover)) +
+  labs(fill = "Number of mentions") +
+  theme_map() +
+  scale_fill_viridis_c()
+
+plotly <- ggplotly(p, tooltip = "text") %>% 
+  layout(title = list(text = paste0('Number of country mentions',
+                                    '<br>',
+                                    '<sup>',
+                                    'Daily Doubles, seasons 1-35',
+                                    '</sup>')))
+
+plotly
+
+```
+
+
+### GDP Trends
+
+
+
+```{r}
+
+jeopardy_all_season  <-  country_data_all%>%
+  mutate(year = year(air_date)) %>%
+  filter(year %in% 2000:2010) %>%
+  group_by(iso3, year) %>%
+  add_tally(name = "count") %>%
+  ungroup() %>%
+  mutate(iso3 = toupper(iso3),
+         iso3 = as.factor(iso3)) %>%
+  rename(ISO3V10 = iso3) %>%
+  full_join(countryExData) %>%
+  filter(!is.na(count)) %>%
+  rename(iso3 = "ISO3V10") %>%
+  clean_names() %>%
+  mutate(ratio = count / landarea)
+
+
+
+stat_plot <- jeopardy_all_season %>%
+  select(iso3, landarea, year, epi_regions, count) %>%
+  #filter(iso3 != 'USA') %>%
+  distinct %>%
+  group_by(year) %>% #summarize(number = n()) %>% arrange(desc(number)) %>%
+  drop_na() %>%
+  nest() %>%
+  mutate(model = purrr::map(data, ~lm(count ~ landarea, data = .x) %>% 
+                              tidy() %>% select(term, estimate))) %>%
+  unnest(c(model)) %>% #arrange(desc(p.value)) <-- all p values are <0.05
+  pivot_wider(names_from = term, values_from = estimate) %>%
+  clean_names %>%
+  rename(slope = landarea) %>%
+  unnest(data) %>%
+  ggplot() +
+  geom_point(aes(x = landarea, y = count, frame = year, color = epi_regions, label = iso3)) +
+  geom_abline(aes(slope = slope, intercept = intercept, frame = year, color = epi_regions))
+
+
+ggplotly(stat_plot)
+
+```
+
+
