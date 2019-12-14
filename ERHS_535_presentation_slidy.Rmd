@@ -4,9 +4,15 @@ author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
 date: "12/5/2019"
 output: slidy_presentation
 ---
+---
+title: "Jeopardy Geography Presentation"
+author: "Daniel Dean, Jessica Nunez, Erin Wall, Chayou Zhai"
+date: "12/5/2019"
+output: slidy_presentation
+---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, incldue = FALSE, warning = FALSE, message=FALSE, warning= FALSE)
+knitr::opts_chunk$set(echo = FALSE, include = FALSE, echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
 ## Introduction:
@@ -17,7 +23,6 @@ Jeopardy has been running for 35 seasons. In this project our task was to create
 Which countries are most frequently-mentioned in Jeopardy, and how does that relate to the frequency of daily doubles? 
 
 Is there a correlation between land area and mentions in Jeopardy?
-
 Is there a correlation between land area or GDP and mentions in Jeopardy?
 
 ## Methods:
